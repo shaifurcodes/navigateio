@@ -1,0 +1,116 @@
+//static dwt_rxdiag_t cur_rx_diag;
+//static uint32 cir_pwr_reg;
+//static uint16 cir_pwr;
+//static float pw_diff;
+//static float noise_to_fp_ratio;
+//static float metric;
+
+//float compute_link_metric(){
+//	/*
+//	 * pw_diff = 10log10( ( f1^2+f1^2+f3^2 )/ c ) - 170log10 (2)
+//	 * noise_to_amp_ratio = std_noise/f2
+//	 * metric = 100/(pw_diff*noise_to_amp_ratio)
+//	 */
+//	uint32 start_time = dwt_readsystimestamphi32();
+//	dwt_readdiagnostics(&cur_rx_diag);
+//	cir_pwr_reg = dwt_read32bitoffsetreg(0x12, 0x04);
+//	cir_pwr = (uint16) ( cir_pwr_reg >> 16);
+//	pw_diff = -10.*log10( ( pow(cur_rx_diag.firstPathAmp1, 2.)+\
+//			 pow(cur_rx_diag.firstPathAmp2, 2.) +\
+//			 pow(cur_rx_diag.firstPathAmp3, 2.)
+//		    )/ cir_pwr
+//		  ) + 51.1751;
+//	noise_to_fp_ratio = (float) cur_rx_diag.stdNoise/cur_rx_diag.firstPathAmp2;
+//	metric = 100./(noise_to_fp_ratio * pw_diff);
+//
+////	uint32 end_time = dwt_readsystimestamphi32();
+////	float comp_time;
+////
+////	if(end_time >= start_time)
+////		comp_time = round( (end_time - start_time)*3.99/1000000.);
+////	else
+////		comp_time =  round( ((UINT32_MAX - start_time) + end_time)*3.99/1000000.);
+////
+////	char usb_str_data[50];
+////	sprintf(usb_str_data, "%u,%u\nEND\n", (uint16)comp_time, (uint16) metric);
+////	usb_write(usb_str_data, strlen(usb_str_data), TRUE);
+//	return metric;
+//}
+
+//void send_cir_value_via_usb(){
+//	/*
+//	 * read the last sample_count cir index bytes and send via usb for analysis
+//	 * values sent, sequence of amplitudes (700  through 1016)
+//	 * param-name: param-value
+//	 * where, param-name can be any of {fp-index, std-noise, max-noise, max-gcir, ntm}
+//	 * terminates one round by 'END' string
+//	 */
+//	char usb_str_data[50];
+//
+////	cur_rx_diag.firstPath = 0;
+////	cur_rx_diag.firstPathAmp1 =0;
+////	cur_rx_diag.firstPathAmp2 =0;
+////	cur_rx_diag.firstPathAmp3 =0;
+////	cur_rx_diag.maxGrowthCIR = 0;
+////	cur_rx_diag.maxNoise = 0;
+////	cur_rx_diag.stdNoise = 0;
+////	cur_rx_diag.rxPreamCount = 0;
+//
+//	dwt_readdiagnostics(&cur_rx_diag);
+//
+//	uint8 iq_buff[5];
+//	float i_val, q_val, cur_amp;
+//	uint16 i;
+//
+//	uint16 first_path_indx = (uint16) cur_rx_diag.firstPath/64;
+//
+//
+//	cir_pwr_reg = dwt_read32bitoffsetreg(0x12, 0x04);
+//	cir_pwr = (uint16) ( cir_pwr_reg >> 16);
+//
+//	for(i=700; i<1016; ++i){
+//		if(i==first_path_indx)
+//			i_val = 0. ;
+//		dwt_readaccdata(iq_buff, 5 , 4*i);
+//		i_val =  iq_buff[2]+  iq_buff[1]*256;
+//		q_val =  iq_buff[4]+  iq_buff[3]*256;
+//		cur_amp = sqrt(i_val*i_val + q_val*q_val);
+//		//send via usb
+//		sprintf(usb_str_data, "%u\n", (uint16) cur_amp);
+//		usb_write(usb_str_data, strlen(usb_str_data), TRUE);
+//	}
+//
+//	sprintf(usb_str_data, "fp-index:%u\n", first_path_indx );
+//	usb_write(usb_str_data, strlen(usb_str_data), TRUE);
+//
+//	sprintf(usb_str_data, "cir-power:%u\n", cir_pwr );
+//	usb_write(usb_str_data, strlen(usb_str_data), TRUE);
+//
+//	sprintf(usb_str_data, "fp-amp1:%u\n", cur_rx_diag.firstPathAmp1 );
+//	usb_write(usb_str_data, strlen(usb_str_data), TRUE);
+//
+//	sprintf(usb_str_data, "fp-amp2:%u\n", cur_rx_diag.firstPathAmp2 );
+//	usb_write(usb_str_data, strlen(usb_str_data), TRUE);
+//
+//	sprintf(usb_str_data, "fp-amp3:%u\n", cur_rx_diag.firstPathAmp3 );
+//	usb_write(usb_str_data, strlen(usb_str_data), TRUE);
+//
+//	sprintf(usb_str_data, "ntm:%u\n",ntm);
+//	usb_write(usb_str_data, strlen(usb_str_data), TRUE);
+//
+//	sprintf(usb_str_data, "std-noise:%u\n",cur_rx_diag.stdNoise);
+//	usb_write(usb_str_data, strlen(usb_str_data), TRUE);
+//
+//	sprintf(usb_str_data, "max-noise:%u\n",cur_rx_diag.maxNoise);
+//	usb_write(usb_str_data, strlen(usb_str_data), TRUE);
+//
+//	sprintf(usb_str_data, "max-gcir:%u\n",cur_rx_diag.maxGrowthCIR);
+//	usb_write(usb_str_data, strlen(usb_str_data), TRUE);
+//
+//	sprintf(usb_str_data, "pre-count:%u\n",cur_rx_diag.rxPreamCount);
+//	usb_write(usb_str_data, strlen(usb_str_data), TRUE);
+//
+//	sprintf(usb_str_data, "END\n");
+//	usb_write(usb_str_data, strlen(usb_str_data), TRUE);
+//	return;
+//}

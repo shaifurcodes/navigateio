@@ -1,0 +1,26 @@
+/*! ----------------------------------------------------------------------------
+ * @file    XYZ.h
+ * @brief   
+ *
+ * @attention
+ *
+ * Copyright 2019 (c) NEC Labs America
+ *
+ * All rights reserved.
+ *
+ * @author Md Shaifur Rahman
+ */
+
+#ifndef _XYZ_
+#define _XYZ_
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+/* function prototype starts here  */
+
+#ifdef __cplusplus
+}
+#endif
+
+#endif /* _XYZ_ */

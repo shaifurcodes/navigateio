@@ -1,0 +1,12 @@
+frame.c:101:13:cb_tx_ok	0	static
+frame.c:124:13:cb_rx_tout	0	static
+frame.c:128:13:cb_rx_error	8	static
+frame.c:105:13:cb_rx_ok	56	static
+frame.c:34:7:get_link_metric	48	static
+frame.c:70:6:generate_init_frame	16	static
+frame.c:76:6:generate_poll_frame	16	static
+frame.c:82:6:generate_resp_frame	16	static
+frame.c:88:6:generate_final_frame	16	static
+frame.c:94:6:generate_shout_frame	16	static
+frame.c:135:6:set_irq_handlers	8	static
+frame.c:149:8:read_timestamp	24	static
