@@ -9,7 +9,7 @@ class Lora:
     def __init__(self, serial_port):
         serial_read_timeout_sec = 0.1
         self.is_rpi = False
-        if 'tty' in serial_port: #TODO: if tty in portname, assume rpi, revisit to make code better
+        if 'ttyAMA0' in serial_port: #TODO: if tty in portname, assume rpi, revisit to make code better
             self.is_rpi = True
         if self.is_rpi:
             serial_read_timeout_sec = 0.5
