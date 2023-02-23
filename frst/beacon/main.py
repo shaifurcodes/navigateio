@@ -152,6 +152,7 @@ class FRSTRPI(object):
                 time.sleep(0.1)
                 lora_msg = self.lora_node.lora_receive()
                 controller_cmd = ''.join(letter for letter in lora_msg if letter.isalnum() or letter in [' ']) #TODO: recheck if characters are dropped
+                print("debug: controller_cmd: " + str(controller_cmd))
                 if controller_cmd:
                     self.handle_controller_command(controller_cmd)
             except Exception as ex:
@@ -167,11 +168,12 @@ class FRSTRPI(object):
         if len(nodes) < 2:
             return
         if int(nodes[0]) != self.uwb_node_id:
-            print("debug: nodes mismatch: my node id:"+str(self.uwb_node_id)+" nodes[0]:"+str(nodes[0]))
+            #print("debug: nodes mismatch: my node id:"+str(self.uwb_node_id)+" nodes[0]:"+str(nodes[0]))
             return
         rlist = []
         for n1 in nodes[1:]:
             rlist.append(int(n1))
+        print("debug: rlist: "+str(rlist))
         uwb_range_str = self.get_uwb_ranges(nlist=rlist, slot_time_msec=self.slot_time_msec)
         print("debug: uwb_range_str: "+str(uwb_range_str))
         self.lora_node.lora_send(str(uwb_range_str))
