@@ -37,6 +37,7 @@ class FRSTController(object):
                     for n2 in self.node_list:
                         if n1!=n2:
                             lora_msg =lora_msg+' '+str(n2)
+                    print("debug: lora-msg:"+lora_msg)
                     self.lora_node.lora_send(lora_msg)
                     finishing_ts = time.time()+self.LORA_RESP_WAIT_TIME_SEC
                     while time.time() < finishing_ts:
