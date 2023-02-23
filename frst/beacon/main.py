@@ -162,15 +162,18 @@ class FRSTRPI(object):
     def handle_controller_command(self, controller_cmd):
         #TODO: fix controller<--->beacon format later
         #currently: 1 2 4 resp: 2 100.2 4 40.3
+        print("debug: @handle_controller_command((..) trapped")
         nodes = controller_cmd.split()
         if len(nodes) < 2:
             return
         if int(nodes[0]) != self.uwb_node_id:
+            print("debug: nodes mismatch: my node id:"+str(self.uwb_node_id)+" nodes[0]:"+str(nodes[0]))
             return
         rlist = []
         for n1 in nodes[1:]:
             rlist.append(int(n1))
         uwb_range_str = self.get_uwb_ranges(nlist=rlist, slot_time_msec=self.slot_time_msec)
+        print("debug: uwb_range_str: "+str(uwb_range_str))
         self.lora_node.lora_send(str(uwb_range_str))
         return
 

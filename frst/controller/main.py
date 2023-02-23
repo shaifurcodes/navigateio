@@ -11,7 +11,7 @@ class FRSTController(object):
     def __init__(self):
         self.LORA_PORT = '/dev/ttyUSB0'
         self.lora_node = Lora(serial_port=self.LORA_PORT)
-        self.node_list = [1, 2, 3, 4]
+        self.node_list = [2, 4]
         self.LORA_RESP_WAIT_TIME_SEC = 0.4
         return
 
