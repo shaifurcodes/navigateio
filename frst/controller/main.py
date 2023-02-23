@@ -40,6 +40,7 @@ class FRSTController(object):
                     self.lora_node.lora_send(lora_msg)
                     finishing_ts = time.time()+self.LORA_RESP_WAIT_TIME_SEC
                     while time.time() < finishing_ts:
+                        time.sleep(0.1)
                         lora_msg = self.lora_node.lora_receive()
                         if not lora_msg:
                             continue
