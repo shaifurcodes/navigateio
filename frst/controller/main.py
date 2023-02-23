@@ -12,7 +12,7 @@ class FRSTController(object):
         self.LORA_PORT = '/dev/ttyUSB0'
         self.lora_node = Lora(serial_port=self.LORA_PORT)
         self.node_list = [2, 3, 4]
-        self.LORA_RESP_WAIT_TIME_SEC = 0.5
+        self.LORA_RESP_WAIT_TIME_SEC = 1.0
         return
 
     # def run_simple_raning(self):
@@ -31,6 +31,7 @@ class FRSTController(object):
     def run_ranging(self):
         while True:
             try:
+                time.sleep(1)
                 for n1 in self.node_list:
                     lora_msg='cb '+str(n1)
                     for n2 in self.node_list:
@@ -42,7 +43,7 @@ class FRSTController(object):
                         lora_msg = self.lora_node.lora_receive()
                         if not lora_msg:
                             continue
-                        lora_msg = ''.join(letter for letter in lora_msg if letter.isalnum() or letter in [' ']) #TODO: recheck if characters are dropped
+                        lora_msg = ''.join(letter for letter in lora_msg if letter.isalnum() or letter in [',',' ']) #TODO: recheck if characters are dropped
                         if 'bc' in lora_msg:
                             range_vals = lora_msg.split('bc')[-1].strip()
                             print("ranging node:"+str(n1)+"==============")
