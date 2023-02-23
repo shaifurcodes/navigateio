@@ -25,7 +25,7 @@ class FRSTRPI(object):
         self.CMD_SEND_LOG = 5
 
         self.USB_TERMINATION_STR = 'END'
-        self.USB_OP_LATENCY_MSEC = 1.0
+        self.USB_OP_LATENCY_MSEC = 10.0
         self.USB_BAUDRATE = 115200
         self.usb_cmd_counter = 0
 
