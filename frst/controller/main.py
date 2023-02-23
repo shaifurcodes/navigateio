@@ -15,6 +15,17 @@ class FRSTController(object):
         self.LORA_RESP_WAIT_TIME_SEC = 0.4
         return
 
+    def run_simple_raning(self):
+        while True:
+            try:
+                self.lora_node.lora_send("2 4")
+                time.sleep(1)
+                lora_msg = self.lora_node.lora_receive()
+                print(lora_msg)
+            except Exception as ex:
+                print(ex)
+                self.lora_node.close_serial_port()
+
     def run_ranging(self):
         while True:
             try:
@@ -39,4 +50,4 @@ class FRSTController(object):
 if __name__ == '__main__':
     signal.signal(signal.SIGINT, sigint_handler)
     frst_controller = FRSTController()
-    frst_controller.run_ranging()
+    frst_controller.run_simple_raning()
