@@ -174,10 +174,10 @@ class FRSTRPI(object):
         rlist = []
         for n1 in nodes[1:]:
             rlist.append(int(n1))
-        print("debug: rlist: "+str(rlist))
+        print("debug: my_id: "+str(self.uwb_node_id)+" rlist: "+str(rlist))
         uwb_range_str = self.get_uwb_ranges(nlist=rlist, slot_time_msec=self.slot_time_msec)
         print("debug: uwb_range_str: "+str(uwb_range_str))
-        lora_return_msg='bc '+uwb_range_str
+        lora_return_msg='bc '+str(self.uwb_node_id)+" : "+uwb_range_str
         print("debug: "+lora_return_msg)
         self.lora_node.lora_send(lora_return_msg)
         return
