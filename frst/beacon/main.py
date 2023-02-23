@@ -178,6 +178,7 @@ class FRSTRPI(object):
         uwb_range_str = self.get_uwb_ranges(nlist=rlist, slot_time_msec=self.slot_time_msec)
         print("debug: uwb_range_str: "+str(uwb_range_str))
         lora_return_msg='bc '+uwb_range_str
+        print("debug: "+lora_return_msg)
         self.lora_node.lora_send(lora_return_msg)
         return
 
