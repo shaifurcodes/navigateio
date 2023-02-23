@@ -19,8 +19,8 @@ class FRSTController(object):
         msg_counter = 0
         while True:
             try:
-                self.lora_node.lora_send("2 4")
-                time.sleep(5)
+                self.lora_node.lora_send("cb 2 4") #TODO: ENSURE FORMAT cb
+                time.sleep(5) #TODO: DECREASE SLEEEP TIME
                 lora_msg = self.lora_node.lora_receive()
                 msg_counter += 1
                 print(str(msg_counter)+" lora_msg:"+str(lora_msg))

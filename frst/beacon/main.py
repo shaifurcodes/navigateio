@@ -25,7 +25,7 @@ class FRSTRPI(object):
         self.CMD_SEND_LOG = 5
 
         self.USB_TERMINATION_STR = 'END'
-        self.USB_OP_LATENCY_MSEC = 10.0
+        self.USB_OP_LATENCY_MSEC = 10.0 #TODO: try decreasing latency time
         self.USB_BAUDRATE = 115200
         self.usb_cmd_counter = 0
 
@@ -152,7 +152,9 @@ class FRSTRPI(object):
                 time.sleep(0.1)
                 lora_msg = self.lora_node.lora_receive()
                 controller_cmd = ''.join(letter for letter in lora_msg if letter.isalnum() or letter in [' ']) #TODO: recheck if characters are dropped
-                print("debug: controller_cmd: " + str(controller_cmd))
+                if not 'cb' in controller_cmd:
+                    continue
+                controller_cmd = controller_cmd.split('cb')[-1].strip()
                 if controller_cmd:
                     self.handle_controller_command(controller_cmd)
             except Exception as ex:
@@ -163,7 +165,6 @@ class FRSTRPI(object):
     def handle_controller_command(self, controller_cmd):
         #TODO: fix controller<--->beacon format later
         #currently: 1 2 4 resp: 2 100.2 4 40.3
-        print("debug: @handle_controller_command((..) trapped")
         nodes = controller_cmd.split()
         if len(nodes) < 2:
             return
@@ -176,7 +177,8 @@ class FRSTRPI(object):
         print("debug: rlist: "+str(rlist))
         uwb_range_str = self.get_uwb_ranges(nlist=rlist, slot_time_msec=self.slot_time_msec)
         print("debug: uwb_range_str: "+str(uwb_range_str))
-        self.lora_node.lora_send(str(uwb_range_str))
+        lora_return_msg='bc '+uwb_range_str
+        self.lora_node.lora_send(lora_return_msg)
         return
 
 if __name__ == '__main__':
