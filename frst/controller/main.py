@@ -16,12 +16,14 @@ class FRSTController(object):
         return
 
     def run_simple_raning(self):
+        msg_counter = 0
         while True:
             try:
                 self.lora_node.lora_send("2 4")
-                time.sleep(1)
+                time.sleep(5)
                 lora_msg = self.lora_node.lora_receive()
-                print(lora_msg)
+                msg_counter += 1
+                print(str(msg_counter)+" lora_msg:"+str(lora_msg))
             except Exception as ex:
                 print(ex)
                 self.lora_node.close_serial_port()
