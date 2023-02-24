@@ -54,6 +54,7 @@ class FRSTController(object):
         if not 'E' in lora_msgs:
             return  is_lora_response_latest
         lora_msg_set = lora_msgs.split('E')
+
         for msg in lora_msg_set:
             if not msg:
                 continue
@@ -82,17 +83,17 @@ class FRSTController(object):
                 continue
         return is_lora_response_latest
 
-    def run_ranging(self):
+    def run_controller(self):
         while True:
             try:
                 time.sleep(0.1)
                 for n1 in self.node_list:
                     self.lora_msg_seq_no += 1
-                    lora_send_msg='cb '+str(self.lora_msg_seq_no)+' '+str(self.controller_id)+' '+str(n1)+self.LORA_CMD_RANGE+'='
+                    lora_send_msg='cb '+str(self.lora_msg_seq_no)+' '+str(self.controller_id)+' '+str(n1)+' '+str(self.LORA_CMD_RANGE)+' ='
                     for n2 in self.node_list:
                         if n1!=n2:
                             lora_send_msg =lora_send_msg+' '+str(n2)
-                    lora_send_msg =  lora_send_msg + 'E'
+                    lora_send_msg =  lora_send_msg + ' E'
                     print("debug: lora-msg:"+lora_send_msg)
                     self.lora_node.lora_send(lora_send_msg)
                     finishing_ts = time.time()+self.LORA_RESP_WAIT_TIME_SEC
@@ -111,4 +112,4 @@ class FRSTController(object):
 if __name__ == '__main__':
     signal.signal(signal.SIGINT, sigint_handler)
     frst_controller = FRSTController()
-    frst_controller.run_ranging()
+    frst_controller.run_controller()
