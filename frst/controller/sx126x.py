@@ -13,10 +13,9 @@ class Lora:
             self.is_rpi = True
         if self.is_rpi:
             serial_read_timeout_sec = 0.5
-        print("debug: serial_port_timeout_sec: "+str(serial_read_timeout_sec))
         try:
             self.ser = serial.Serial(port=serial_port,
-                                         baudrate=9600,
+                                         baudrate= 9600,
                                          bytesize=serial.EIGHTBITS,
                                          parity=serial.PARITY_NONE,
                                          stopbits=serial.STOPBITS_ONE,
@@ -45,24 +44,16 @@ class Lora:
             GPIO.output(self.M0, GPIO.LOW)
 
     def lora_send(self, data):
-        if self.is_rpi:
-            GPIO.output(self.M1, GPIO.LOW)
-            GPIO.output(self.M0, GPIO.LOW)
-            time.sleep(0.1)
         try:
             self.ser.reset_output_buffer()
             lora_data = (str(data)+"\n").encode(encoding='utf-8')
             self.ser.write(lora_data)
-            time.sleep(0.1)
+            time.sleep(0.01)
         except Exception as ex:
             print(ex)
         return
 
     def lora_receive(self):
-        # if self.is_rpi:
-        #     GPIO.output(self.M1, GPIO.LOW)
-        #     GPIO.output(self.M0, GPIO.LOW)
-        #     time.sleep(0.1)
         recv_msg = ""
         try:
             recv_msg = self.ser.read_until(expected='\n').decode(encoding='utf-8', errors='ignore')
