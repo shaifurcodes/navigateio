@@ -40,9 +40,11 @@ class FRSTRPI(object):
         if not self.find_dw1000_via_usb():
             print("Did not find DW1000 via USB!!")
             exit(1)
+        self.LORA_PERMITTED_CHARS_SET = [' ', ',', '=']
         self.set_uwb_node_id()
         return
 
+    #---------------------------utilitiy methods-------------------------------------#
     def find_usb_port(self, vendor_id, product_id):
         context = pyudev.Context()
         for device in context.list_devices(subsystem='tty', ID_BUS='usb'):
@@ -54,6 +56,7 @@ class FRSTRPI(object):
                         return str(cur_device_attrs['DEVNAME'])
         return ''
 
+    #----------------------------UWB USB API methods ------------------------------------#
     def find_dw1000_via_usb(self):
         max_retries = 5
         attempt = 1
@@ -67,7 +70,6 @@ class FRSTRPI(object):
             time.sleep(1)
         return False
 
-    #----------------------------UWB USB API methods ------------------------------------#
     def get_uwb_usb_data(self, usb_msg, usb_read_timeout):
         with serial.Serial(self.uwb_usb_port_id,
                            baudrate=self.USB_BAUDRATE,
@@ -143,44 +145,63 @@ class FRSTRPI(object):
                 return nr_list_str
         return ''
 
-    #-------------------------------LoRa API Methods-------------------------------------#
-
     #-------------------------generic Methods-------------------------------------------#
+    def process_lora_msgs(self, lora_msgs):
+        '''
+        tasks:
+            1. list all lora messages
+            2. process lora messages directed to me one by one
+        :param lora_msgs:
+        :return:
+        '''
+        if not 'E' in lora_msgs:
+            return
+        lora_msg_set = lora_msgs.split('E')
+        for msg in lora_msg_set:
+            if not msg:
+                continue
+            if not '=' in msg:
+                continue
+            msg_prefix, msg_suffix = msg.split('=')
+            if not msg_prefix:
+                continue
+            msg_prefix = msg_prefix.split()
+            if len(msg_prefix) != 5:
+                continue
+            if not 'cb' in msg_prefix[0] and not 'bb' in msg_prefix[0]:
+                continue
+            lora_seq_no = int(msg_prefix[1])
+            if int(msg_prefix[2]) != self.uwb_node_id:
+                continue
+            lora_src_node = msg_prefix[3]
+            lora_cmd_type = msg_prefix[4]
+
+            if lora_cmd_type=='r':
+                if msg_suffix:
+                    rlist = []
+                    for n1 in msg_suffix:
+                        rlist.append(int(n1))
+                    range_response = self.get_uwb_ranges(nlist=rlist, slot_time_msec=self.slot_time_msec)
+                    lora_range_reponse = 'bc '+str(lora_seq_no)+' '+str(self.uwb_node_id)+' '+str(lora_src_node)+' '+str(lora_cmd_type)+"="+range_response+" E"
+                    self.lora_node.lora_send(lora_range_reponse)
+            elif lora_cmd_type=='s':
+                #TODO
+                continue
+            else:
+                continue
+
     def run_beacon(self):
         while True:
             try:
                 time.sleep(0.1)
-                lora_msg = self.lora_node.lora_receive()
-                controller_cmd = ''.join(letter for letter in lora_msg if letter.isalnum() or letter in [' ']) #TODO: recheck if characters are dropped
-                if not 'cb' in controller_cmd:
-                    continue
-                controller_cmd = controller_cmd.split('cb')[-1].strip()
-                if controller_cmd:
-                    self.handle_controller_command(controller_cmd)
+                lora_recv_msgs = self.lora_node.lora_receive()
+                lora_recv_msgs = ''.join(letter for letter in lora_recv_msgs if letter.isalnum() or letter in self.LORA_PERMITTED_CHARS_SET)
+                self.process_lora_msgs(lora_recv_msgs)
             except Exception as ex:
                 print(ex)
                 exit(1)
         return
 
-    def handle_controller_command(self, controller_cmd):
-        #TODO: fix controller<--->beacon format later
-        #currently: 1 2 4 resp: 2 100.2 4 40.3
-        nodes = controller_cmd.split()
-        if len(nodes) < 2:
-            return
-        if int(nodes[0]) != self.uwb_node_id:
-            #print("debug: nodes mismatch: my node id:"+str(self.uwb_node_id)+" nodes[0]:"+str(nodes[0]))
-            return
-        rlist = []
-        for n1 in nodes[1:]:
-            rlist.append(int(n1))
-        print("debug: my_id: "+str(self.uwb_node_id)+" rlist: "+str(rlist))
-        uwb_range_str = self.get_uwb_ranges(nlist=rlist, slot_time_msec=self.slot_time_msec)
-        print("debug: uwb_range_str: "+str(uwb_range_str))
-        lora_return_msg='bc '+str(self.uwb_node_id)+" : "+uwb_range_str
-        print("debug: "+lora_return_msg)
-        self.lora_node.lora_send(lora_return_msg)
-        return
 
 if __name__ == '__main__':
     signal.signal(signal.SIGINT, sigint_handler)
