@@ -13,7 +13,6 @@ class Lora:
             self.is_rpi = True
         if self.is_rpi:
             serial_read_timeout_sec = 0.5
-        print("debug: serial_port_timeout_sec: "+str(serial_read_timeout_sec))
         try:
             self.ser = serial.Serial(port=serial_port,
                                          baudrate=9600,
