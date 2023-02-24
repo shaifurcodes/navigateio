@@ -163,7 +163,6 @@ class FRSTRPI(object):
             if not '=' in msg:
                 continue
             msg_prefix, msg_suffix = msg.split('=')
-            print("debug:"+msg_prefix)
             if not msg_prefix:
                 continue
             msg_prefix = msg_prefix.split()
@@ -180,6 +179,7 @@ class FRSTRPI(object):
             if lora_cmd_type=='r':
                 if msg_suffix:
                     rlist = []
+                    msg_suffix = msg_suffix.split()
                     for n1 in msg_suffix:
                         rlist.append(int(n1))
                     range_response = self.get_uwb_ranges(nlist=rlist, slot_time_msec=self.slot_time_msec)
