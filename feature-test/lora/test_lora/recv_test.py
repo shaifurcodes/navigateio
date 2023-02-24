@@ -20,9 +20,15 @@ def recv_test():
         try:
             time.sleep(0.5)
             lora_msg = lora_node.lora_receive()
+            msgs = []
             filtered_msg = ''.join(letter for letter in lora_msg if letter.isalnum() or letter in [',', ' ','=']) #TODO: recheck if characters are dropped
-            if lora_msg:
-                print(filtered_msg)
+            if 'E' in filtered_msg:
+                msgs = filtered_msg.split('E')
+            else:
+                msgs = [filtered_msg]
+            for msg in msgs:
+                if msg:
+                    print(msg)
         except Exception as ex:
             print(ex)
             break
