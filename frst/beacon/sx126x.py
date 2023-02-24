@@ -15,7 +15,7 @@ class Lora:
             serial_read_timeout_sec = 0.5
         try:
             self.ser = serial.Serial(port=serial_port,
-                                         baudrate= 19200,
+                                         baudrate= 9600,
                                          bytesize=serial.EIGHTBITS,
                                          parity=serial.PARITY_NONE,
                                          stopbits=serial.STOPBITS_ONE,
