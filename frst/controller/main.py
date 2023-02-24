@@ -91,7 +91,7 @@ class FRSTController(object):
                 for n1 in [4]: #self.node_list: #TODO: restore
                     self.lora_msg_seq_no += 1
                     lora_send_msg='cb '+str(self.lora_msg_seq_no)+' '+str(self.controller_id)+' '+str(n1)+' '+str(self.LORA_CMD_RANGE)+' ='
-                    for n2 in [2, 6] # self.node_list: #TODO: restore
+                    for n2 in [2, 6]: # self.node_list: #TODO: restore
                         if n1!=n2:
                             lora_send_msg =lora_send_msg+' '+str(n2)
                     lora_send_msg =  lora_send_msg + ' E'
