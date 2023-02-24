@@ -15,7 +15,7 @@ class Lora:
             serial_read_timeout_sec = 0.5
         try:
             self.ser = serial.Serial(port=serial_port,
-                                         baudrate=11520,
+                                         baudrate=9600,
                                          bytesize=serial.EIGHTBITS,
                                          parity=serial.PARITY_NONE,
                                          stopbits=serial.STOPBITS_ONE,
@@ -44,10 +44,10 @@ class Lora:
             GPIO.output(self.M0, GPIO.LOW)
 
     def lora_send(self, data):
-        if self.is_rpi:
-            GPIO.output(self.M1, GPIO.LOW)
-            GPIO.output(self.M0, GPIO.LOW)
-            time.sleep(0.01)
+        # if self.is_rpi:
+        #     GPIO.output(self.M1, GPIO.LOW)
+        #     GPIO.output(self.M0, GPIO.LOW)
+        #     time.sleep(0.01)
         try:
             self.ser.reset_output_buffer()
             lora_data = (str(data)+"\n").encode(encoding='utf-8')
