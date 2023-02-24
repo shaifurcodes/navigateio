@@ -196,6 +196,7 @@ class FRSTRPI(object):
                 time.sleep(0.1)
                 lora_recv_msgs = self.lora_node.lora_receive()
                 lora_recv_msgs = ''.join(letter for letter in lora_recv_msgs if letter.isalnum() or letter in self.LORA_PERMITTED_CHARS_SET)
+                print("debug: lora-recv-msg: "+str(lora_recv_msgs))
                 self.process_lora_msgs(lora_recv_msgs)
             except Exception as ex:
                 print(ex)
