@@ -1,14 +1,20 @@
-from sx126x import Lora
+#!/usr/bin/python3.8
+
+import logging
 import time
 import sys
 import signal
 
+from sx126x import Lora
+
 def sigint_handler(signal, frame):
-    print('Exiting program.....')
+    #print('Exiting program.....')
     sys.exit(0)
 
 class FRSTController(object):
     def __init__(self):
+        self.init_logging()
+
         self.LORA_PORT = '/dev/ttyUSB0'
         self.lora_node = Lora(serial_port=self.LORA_PORT)
         self.node_list = [2, 4, 6]
@@ -22,12 +28,23 @@ class FRSTController(object):
         self.init_ts = time.time()
         return
 
+    def init_logging(self):
+        log_file_name = './controller.log'
+        logging.basicConfig(
+            filename= log_file_name,
+            filemode='w',
+            level=logging.DEBUG,
+            format='%(asctime)s.%(msecs)03d, %(threadName)-10s: %(message)s',
+            datefmt='%H:%M:%S')  # '%Y-%m-%d %H:%M:%S'
+        return
+
     def process_lora_range_response(self, src_node, range_response):
         '''
         :param src_node:
         :param range_response: "2 2323, 3 4343" etc.
         :return:
         '''
+        logging.debug("processing lora resp: src:"+str(src_node)+" range_response:"+range_response)
         node_range_pair = []
         if ',' in range_response:
             node_range_pair = range_response.split(',')
@@ -37,7 +54,7 @@ class FRSTController(object):
             n1_r1 = n1_r1.split()
             if len(n1_r1)==2:
                 cur_ts = round(time.time() - self.init_ts, 3)
-                print(str(cur_ts)+" "+str(src_node)+" "+str(n1_r1[0])+" "+str(  round(float(n1_r1[1])/100.0, 3) )+" meter")
+                logging.info(str(cur_ts)+" "+str(src_node)+" "+str(n1_r1[0])+" "+str(  round(float(n1_r1[1])/100.0, 3) )+" meter")
                 #TODO: also write in file as csv format
         return
 
@@ -56,6 +73,7 @@ class FRSTController(object):
         lora_msg_set = lora_msgs.split('E')
 
         for msg in lora_msg_set:
+            logging.debug("processing msg: "+str(msg))
             if not msg:
                 continue
             if not '=' in msg:
@@ -83,7 +101,6 @@ class FRSTController(object):
                 continue
         return is_lora_response_latest
 
-
     def run_controller(self):
         while True:
             try:
@@ -95,7 +112,8 @@ class FRSTController(object):
                         if n1!=n2:
                             lora_send_msg =lora_send_msg+' '+str(n2)
                     lora_send_msg =  lora_send_msg + ' E'
-                    print("debug: lora-msg:"+lora_send_msg)
+
+                    logging.debug(">>>send over lora, lora-msg:"+lora_send_msg)
                     self.lora_node.lora_send(lora_send_msg)
                     finishing_ts = time.time()+self.LORA_RESP_WAIT_TIME_SEC
                     while time.time() <= finishing_ts:
@@ -104,11 +122,13 @@ class FRSTController(object):
                         if not lora_recv_msgs:
                             continue
                         lora_recv_msgs = ''.join(letter for letter in lora_recv_msgs if letter.isalnum() or letter in self.LORA_PERMITTED_CHARS_SET)
-                        print("debug:recv-lora-msg:"+str(lora_recv_msgs))
-                        if self.process_lora_msg(lora_recv_msgs):
-                            break
+                        if lora_recv_msgs:
+                            logging.debug("<<< recv over lora, lora-msg:"+lora_recv_msgs)
+                            if self.process_lora_msg(lora_recv_msgs):
+                                logging.debug("end of lora-recv-msg processing")
+                                break
             except Exception as ex:
-                print(ex)
+                logging.exception(ex)
                 self.lora_node.close_serial_port()
 
 if __name__ == '__main__':

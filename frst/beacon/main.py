@@ -1,20 +1,23 @@
 #!/usr/bin/python3.8
 
+import logging
 import  pyudev
 import serial
 import socket
 import time
-
 import sys
 import signal
+
 from sx126x import Lora
 
 def sigint_handler(signal, frame):
-    print('Exiting program.....')
+    #print('Exiting program.....')
     sys.exit(0)
 
 class FRSTRPI(object):
     def __init__(self):
+        self.init_logging()
+
         self.uwb_node_id = -1
         self.uwb_usb_port_id = ''
 
@@ -38,13 +41,23 @@ class FRSTRPI(object):
 
         self.lora_node = Lora(serial_port=self.LORA_PORT_RPI)
         if not self.find_dw1000_via_usb():
-            print("Did not find DW1000 via USB!!")
+            logging.error("Did not find DW1000 via USB, quitting program !!")
             exit(1)
         self.LORA_PERMITTED_CHARS_SET = [' ', ',', '=']
         self.set_uwb_node_id()
         return
 
     #---------------------------utilitiy methods-------------------------------------#
+    def init_logging(self):
+        log_file_name = '/home/pi/software/navigateio/frst/beacon/beacon.log'
+        logging.basicConfig(
+            filename= log_file_name,
+            filemode='w',
+            level=logging.DEBUG,
+            format='%(asctime)s.%(msecs)03d, %(threadName)-10s: %(message)s',
+            datefmt='%H:%M:%S')  # '%Y-%m-%d %H:%M:%S'
+        return
+
     def find_usb_port(self, vendor_id, product_id):
         context = pyudev.Context()
         for device in context.list_devices(subsystem='tty', ID_BUS='usb'):
@@ -65,7 +78,7 @@ class FRSTRPI(object):
             if not self.uwb_usb_port_id:
                 self.uwb_usb_port_id = self.find_usb_port( self.DW1000_VENDOR_ID, self.DW1000_PRODUCT_ID )
             if self.uwb_usb_port_id:
-                print('Found DW1000 via USB')
+                logging.info('Found DW1000 via USB')
                 return True
             time.sleep(1)
         return False
@@ -102,6 +115,7 @@ class FRSTRPI(object):
         '''
         my_hostname = socket.gethostname()
         rpi_no = ''.join([char for char in my_hostname[::-1] if char.isdigit()])[::-1]
+        logging.info("My RPI number: "+str(rpi_no))
 
         self.usb_cmd_counter = (self.usb_cmd_counter + 1) % 256
         usb_msg = str(self.CMD_SEND_ID)+' '+str(self.usb_cmd_counter)+' '+str("RPI")+str(rpi_no)
@@ -110,15 +124,14 @@ class FRSTRPI(object):
         uwb_response = self.get_uwb_usb_data(usb_msg, usb_read_timeout=usb_read_timeout)
 
         if not '=' in uwb_response:
-            print("Unable to read node-ID from UWB via USB!!")
+            logging.error("Unable to read node-ID from UWB via USB, quiting program!!")
             exit(1)
         usb_cmd_plus_seq, src_node_id = uwb_response.split('=')
         usb_cmd, usb_cmd_seq_no = usb_cmd_plus_seq.split()
         usb_cmd, usb_cmd_seq_no = int(usb_cmd), int(usb_cmd_seq_no)
         if(usb_cmd == self.CMD_SEND_ID  and usb_cmd_seq_no == self.usb_cmd_counter):
             self.uwb_node_id = int(src_node_id)
-            with open("uwb_node_id.txt","w") as f:
-                f.write(str(self.uwb_node_id))
+            logging.info("node id set as "+str(self.uwb_node_id))
         return
 
     def get_uwb_ranges(self, nlist, slot_time_msec):
@@ -154,10 +167,12 @@ class FRSTRPI(object):
         :param lora_msgs:
         :return:
         '''
+        #logging.debug("@process_lora_msgs(): lora_msgs "+str(lora_msgs))
         if not 'E' in lora_msgs:
             return
         lora_msg_set = lora_msgs.split('E')
         for msg in lora_msg_set:
+            logging.debug("processing msg: "+str(msg))
             if not msg:
                 continue
             if not '=' in msg:
@@ -182,14 +197,16 @@ class FRSTRPI(object):
                     msg_suffix = msg_suffix.split()
                     for n1 in msg_suffix:
                         rlist.append(int(n1))
+                    logging.debug("starting ranging "+str(self.uwb_node_id)+"-->"+str(rlist))
                     range_response = self.get_uwb_ranges(nlist=rlist, slot_time_msec=self.slot_time_msec)
+                    logging.debug("debug: range_response: "+str(range_response))
                     lora_range_reponse = 'bc '+str(lora_seq_no)+' '+str(self.uwb_node_id)+' '+str(lora_src_node)+' '+str(lora_cmd_type)+"="+range_response+" E"
+                    logging.debug("debug: lora_range_response: " + str(lora_range_reponse))
                     self.lora_node.lora_send(lora_range_reponse)
-            elif lora_cmd_type=='s':
-                #TODO
-                continue
+                    logging.debug("finished sending data over lora for: "+str(self.uwb_node_id)+"-->"+str(rlist))
             else:
                 continue
+        return
 
     def run_beacon(self):
         while True:
@@ -197,9 +214,11 @@ class FRSTRPI(object):
                 time.sleep(0.1)
                 lora_recv_msgs = self.lora_node.lora_receive()
                 lora_recv_msgs = ''.join(letter for letter in lora_recv_msgs if letter.isalnum() or letter in self.LORA_PERMITTED_CHARS_SET)
-                self.process_lora_msgs(lora_recv_msgs)
+                if lora_recv_msgs:
+                    logging.debug("recv-lora-msg: "+str(lora_recv_msgs))
+                    self.process_lora_msgs(lora_recv_msgs)
             except Exception as ex:
-                print(ex)
+                logging.exception(ex)
                 exit(1)
         return
 

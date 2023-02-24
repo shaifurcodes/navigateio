@@ -1,7 +1,7 @@
 LoRa msg format:
 Example 1:
 ===========
-"cb 12 0 4 r=2 6 E"
+"cb 12 0 4 r=2 6 E "
 
 cb: controller to beacon
 bc: beacon to controller
