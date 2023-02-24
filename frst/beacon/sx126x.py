@@ -46,9 +46,9 @@ class Lora:
     def lora_send(self, data):
         try:
             self.ser.reset_output_buffer()
-            lora_data = (str(data)+"\n").encode(encoding='utf-8')
+            lora_data = (str(data)).encode(encoding='utf-8')
             self.ser.write(lora_data)
-            time.sleep(0.01)
+            time.sleep(0.0)
         except Exception as ex:
             print(ex)
         return
@@ -56,7 +56,7 @@ class Lora:
     def lora_receive(self):
         recv_msg = ""
         try:
-            recv_msg = self.ser.read_until(expected='\n').decode(encoding='utf-8', errors='ignore')
+            recv_msg = self.ser.read_until(expected='E').decode(encoding='utf-8', errors='ignore')
         except Exception as ex:
             print(ex)
         self.ser.reset_input_buffer()
