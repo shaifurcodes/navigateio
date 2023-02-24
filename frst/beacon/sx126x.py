@@ -44,10 +44,10 @@ class Lora:
             GPIO.output(self.M0, GPIO.LOW)
 
     def lora_send(self, data):
-        # if self.is_rpi:
-        #     GPIO.output(self.M1, GPIO.LOW)
-        #     GPIO.output(self.M0, GPIO.LOW)
-        #     time.sleep(0.1)
+        if self.is_rpi:
+            GPIO.output(self.M1, GPIO.LOW)
+            GPIO.output(self.M0, GPIO.LOW)
+            time.sleep(0.01)
         try:
             self.ser.reset_output_buffer()
             lora_data = (str(data)+"\n").encode(encoding='utf-8')
