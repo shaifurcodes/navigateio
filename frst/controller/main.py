@@ -70,9 +70,9 @@ class FRSTController(object):
                 continue
             if int(msg_prefix[1]) == self.lora_msg_seq_no:
                 is_lora_response_latest = True
-            if int(msg_prefix[2]) != self.controller_id:
+            lora_src_node = int(msg_prefix[2])
+            if int(msg_prefix[3]) != self.controller_id:
                 continue
-            lora_src_node = int(msg_prefix[3])
             lora_cmd_type = str(msg_prefix[4])
 
             if lora_cmd_type=='r':

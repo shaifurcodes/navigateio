@@ -171,9 +171,9 @@ class FRSTRPI(object):
             if not 'cb' in msg_prefix[0] and not 'bb' in msg_prefix[0]:
                 continue
             lora_seq_no = int(msg_prefix[1])
-            if int(msg_prefix[2]) != self.uwb_node_id:
+            lora_src_node = msg_prefix[2]
+            if int(msg_prefix[3]) != self.uwb_node_id:
                 continue
-            lora_src_node = msg_prefix[3]
             lora_cmd_type = msg_prefix[4]
 
             if lora_cmd_type=='r':
@@ -196,7 +196,6 @@ class FRSTRPI(object):
                 time.sleep(0.1)
                 lora_recv_msgs = self.lora_node.lora_receive()
                 lora_recv_msgs = ''.join(letter for letter in lora_recv_msgs if letter.isalnum() or letter in self.LORA_PERMITTED_CHARS_SET)
-                print("debug: lora-recv-msg: "+str(lora_recv_msgs))
                 self.process_lora_msgs(lora_recv_msgs)
             except Exception as ex:
                 print(ex)
