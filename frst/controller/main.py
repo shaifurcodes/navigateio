@@ -12,7 +12,7 @@ class FRSTController(object):
         self.LORA_PORT = '/dev/ttyUSB0'
         self.lora_node = Lora(serial_port=self.LORA_PORT)
         self.node_list = [2, 4, 6]
-        self.LORA_RESP_WAIT_TIME_SEC = 2.0
+        self.LORA_RESP_WAIT_TIME_SEC = 2.4
         self.lora_msg_seq_no = 0
         self.controller_id = 0
 
@@ -88,10 +88,10 @@ class FRSTController(object):
         while True:
             try:
                 time.sleep(0.1)
-                for n1 in [4]: #self.node_list: #TODO: restore
+                for n1 in self.node_list:
                     self.lora_msg_seq_no += 1
                     lora_send_msg='cb '+str(self.lora_msg_seq_no)+' '+str(self.controller_id)+' '+str(n1)+' '+str(self.LORA_CMD_RANGE)+' ='
-                    for n2 in [2, 6]: # self.node_list: #TODO: restore
+                    for n2 in self.node_list:
                         if n1!=n2:
                             lora_send_msg =lora_send_msg+' '+str(n2)
                     lora_send_msg =  lora_send_msg + ' E'
