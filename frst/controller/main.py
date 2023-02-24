@@ -103,6 +103,7 @@ class FRSTController(object):
                         if not lora_recv_msgs:
                             continue
                         lora_recv_msgs = ''.join(letter for letter in lora_recv_msgs if letter.isalnum() or letter in self.LORA_PERMITTED_CHARS_SET)
+                        print("debug:recv-lora-msg:"+str(lora_recv_msgs))
                         if self.process_lora_msg(lora_recv_msgs):
                             break
             except Exception as ex:
