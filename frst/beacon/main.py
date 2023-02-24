@@ -163,6 +163,7 @@ class FRSTRPI(object):
             if not '=' in msg:
                 continue
             msg_prefix, msg_suffix = msg.split('=')
+            print("debug:"+msg_prefix)
             if not msg_prefix:
                 continue
             msg_prefix = msg_prefix.split()
