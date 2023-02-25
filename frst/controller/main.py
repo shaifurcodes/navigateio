@@ -54,8 +54,10 @@ class FRSTController(object):
             n1_r1 = n1_r1.split()
             if len(n1_r1)==2:
                 cur_ts = round(time.time() - self.init_ts, 3)
+                f_string = str(cur_ts)+", "+str(src_node)+", "+str(n1_r1[0])+", "+str(  round(float(n1_r1[1])/100.0, 3) )+"\n"
                 logging.info(str(cur_ts)+" "+str(src_node)+" "+str(n1_r1[0])+" "+str(  round(float(n1_r1[1])/100.0, 3) )+" meter")
-                #TODO: also write in file as csv format
+                with open("frst_data.txt","a") as f:
+                    f.write(f_string)
         return
 
     def process_lora_msg(self, lora_msgs):
