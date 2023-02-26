@@ -14,15 +14,16 @@ if __name__ == '__main__':
     interval = float(sys.argv[2])
     print("debug: duration ", duration)
     print("debug: interval ", interval)
-    
+
     init_ts = time.time()
     finishing_ts = time.time()+duration
 
     pressure_sensor=LPS22HB()
-    pressure_sensor.set_oneshot_reading_mode()
+
 
     with open('./pressure_values.log','a') as f:
         while time.time() <= finishing_ts:
+            pressure_sensor.set_oneshot_reading_mode()
             while not pressure_sensor.is_new_pressure_val_available():
                 time.sleep(0.1)
             elapsed_ts = round(time.time() -  init_ts, 3)
