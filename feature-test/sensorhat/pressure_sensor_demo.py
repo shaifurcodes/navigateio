@@ -26,6 +26,7 @@ if __name__ == '__main__':
             f_string = str(elapsed_ts)+", "+str(pressure_val)
             f.write( f_string+"\n")
             print(f_string)
+            time.sleep(interval)
 
 
 
