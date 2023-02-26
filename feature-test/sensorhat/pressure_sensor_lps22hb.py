@@ -64,7 +64,9 @@ class LPS22HB(object):
         self._bus.write_byte_data(self._address,cmd,val)
 
     def is_new_pressure_val_available(self):
-        return (self._read_byte(self.LPS_STATUS)&0x01)==0x01
+        if (self._read_byte(self.LPS_STATUS)&0x01)==0x01:
+            return True
+        return False
 
     def get_pressure_val(self):
         u8Buf = [0, 0, 0]
