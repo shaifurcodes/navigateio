@@ -5,8 +5,10 @@ import  pyudev
 import serial
 import socket
 import time
+import threading
 import sys
 import signal
+
 
 from sx126x import Lora
 
