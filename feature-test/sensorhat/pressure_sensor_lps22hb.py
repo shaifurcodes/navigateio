@@ -36,10 +36,10 @@ class LPS22HB(object):
 
         self._address = self.LPS22HB_I2C_ADDRESS
         self._bus = smbus.SMBus(1)
-        self.LPS22HB_RESET()                         #Wait for reset to complete
+        self.reset()                         #Wait for reset to complete
         self._write_byte(self.LPS_CTRL_REG1 ,0x02)        #Low-pass filter disabled , output registers not updated until MSB and LSB have been read , Enable Block Data Update , Set Output Data Rate to 0
 
-    def LPS22HB_RESET(self):
+    def reset(self):
         Buf=self._read_u16(self.LPS_CTRL_REG2)
         Buf|=0x04
         self._write_byte(self.LPS_CTRL_REG2,Buf)               #SWRESET Set 1
@@ -47,7 +47,7 @@ class LPS22HB(object):
             Buf=self._read_u16(self.LPS_CTRL_REG2)
             Buf&=0x04
 
-    def LPS22HB_START_ONESHOT(self):
+    def set_oneshot_reading_mode(self):
         Buf=self._read_u16(self.LPS_CTRL_REG2)
         Buf|=0x01                                         #ONE_SHOT Set 1
         self._write_byte(self.LPS_CTRL_REG2,Buf)

@@ -13,10 +13,11 @@ if __name__ == '__main__':
     duration = float(sys.argv[1])
     interval = float(sys.argv[2])
     init_ts = time.time()
-    finishing_ts =  time.time()+duration
+    finishing_ts = time.time()+duration
 
     pressure_sensor=LPS22HB()
-
+    pressure_sensor.set_oneshot_reading_mode()
+    
     with open('./pressure_values.log','a') as f:
         while time.time() <= finishing_ts:
             while not pressure_sensor.is_new_pressure_val_available():
