@@ -12,8 +12,6 @@ if __name__ == '__main__':
         exit(0)
     duration = float(sys.argv[1])
     interval = float(sys.argv[2])
-    print("debug: duration ", duration)
-    print("debug: interval ", interval)
 
     init_ts = time.time()
     finishing_ts = time.time()+duration
@@ -30,7 +28,6 @@ if __name__ == '__main__':
             pressure_val = round( pressure_sensor.get_pressure_val(), 3 )
             f_string = str(elapsed_ts)+", "+str(pressure_val)
             f.write( f_string+"\n")
-            print(f_string)
             time.sleep(interval)
 
 
