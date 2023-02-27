@@ -8,12 +8,12 @@ import time
 import threading
 import sys
 import signal
+from queue import Queue
 
 
 from sx126x import Lora
 
 def sigint_handler(signal, frame):
-    #print('Exiting program.....')
     sys.exit(0)
 
 class FRSTRPI(object):
@@ -45,7 +45,16 @@ class FRSTRPI(object):
         if not self.find_dw1000_via_usb():
             logging.error("Did not find DW1000 via USB, quitting program !!")
             exit(1)
-        self.LORA_PERMITTED_CHARS_SET = [' ', ',', '=']
+
+        self.CONTROLLER_ID = 0
+        self.LORA_MSG_START_MARK = 'S'
+        self.LORA_MSG_END_MARK = 'E'
+        self.LORA_RANGING_CMD = 'r'
+
+        self.lora_incoming_msg_q = Queue()
+        self.cur_lora_msg = ''
+        self.thread_list = {}
+
         self.set_uwb_node_id()
         return
 
@@ -160,70 +169,92 @@ class FRSTRPI(object):
                 return nr_list_str
         return ''
 
-    #-------------------------generic Methods-------------------------------------------#
-    def process_lora_msgs(self, lora_msgs):
-        '''
-        tasks:
-            1. list all lora messages
-            2. process lora messages directed to me one by one
-        :param lora_msgs:
-        :return:
-        '''
-        #logging.debug("@process_lora_msgs(): lora_msgs "+str(lora_msgs))
-        if not 'E' in lora_msgs:
-            return
-        lora_msg_set = lora_msgs.split('E')
-        for msg in lora_msg_set:
-            logging.debug("processing msg: "+str(msg))
-            if not msg:
-                continue
-            if not '=' in msg:
-                continue
-            msg_prefix, msg_suffix = msg.split('=')
-            if not msg_prefix:
-                continue
-            msg_prefix = msg_prefix.split()
-            if len(msg_prefix) != 5:
-                continue
-            if not 'cb' in msg_prefix[0] and not 'bb' in msg_prefix[0]:
-                continue
-            lora_seq_no = int(msg_prefix[1])
-            lora_src_node = msg_prefix[2]
-            if int(msg_prefix[3]) != self.uwb_node_id:
-                continue
-            lora_cmd_type = msg_prefix[4]
-
-            if lora_cmd_type=='r':
-                if msg_suffix:
-                    rlist = []
-                    msg_suffix = msg_suffix.split()
-                    for n1 in msg_suffix:
-                        rlist.append(int(n1))
-                    logging.debug("starting ranging "+str(self.uwb_node_id)+"-->"+str(rlist))
-                    range_response = self.get_uwb_ranges(nlist=rlist, slot_time_msec=self.slot_time_msec)
-                    logging.debug("debug: range_response: "+str(range_response))
-                    lora_range_reponse = 'bc '+str(lora_seq_no)+' '+str(self.uwb_node_id)+' '+str(lora_src_node)+' '+str(lora_cmd_type)+"="+range_response+" E"
-                    logging.debug("debug: lora_range_response: " + str(lora_range_reponse))
-                    self.lora_node.lora_send(lora_range_reponse)
-                    logging.debug("finished sending data over lora for: "+str(self.uwb_node_id)+"-->"+str(rlist))
-            else:
-                continue
-        return
-
-    def run_beacon(self):
+    #----------------------thread-methods-----------------------------------------------#
+    def thread_lora_frame_receiver(self):
         while True:
+            time.sleep(0) #thread yield
             try:
-                time.sleep(0.1)
                 lora_recv_msgs = self.lora_node.lora_receive()
-                lora_recv_msgs = ''.join(letter for letter in lora_recv_msgs if letter.isalnum() or letter in self.LORA_PERMITTED_CHARS_SET)
-                if lora_recv_msgs:
-                    logging.debug("recv-lora-msg: "+str(lora_recv_msgs))
-                    self.process_lora_msgs(lora_recv_msgs)
+                logging.debug("new lora msg: "+lora_recv_msgs)
+                if not lora_recv_msgs:
+                    continue
+                for cindx, c in enumerate(lora_recv_msgs):
+                    if c==self.last_msg_marker or c==self.LORA_MSG_START_MARK:
+                        self.cur_lora_msg = ''
+                        self.last_msg_marker = c
+                    elif c==self.LORA_MSG_END_MARK:
+                        if self.cur_lora_msg:
+                            self.lora_incoming_msg_q.put(str(self.cur_lora_msg))
+                        self.cur_lora_msg = ''
+                        self.last_msg_marker = c
+                    elif self.last_msg_marker==self.LORA_MSG_START_MARK:
+                        self.cur_lora_msg = self.cur_lora_msg + c
             except Exception as ex:
                 logging.exception(ex)
-                exit(1)
         return
 
+    def thread_handle_controller_commands(self):
+        while True:
+            time.sleep(0)  # thread yield
+            try:
+                if self.lora_incoming_msg_q.empty():
+                    continue
+                cur_msg = self.lora_incoming_msg_q.get()
+                if not '=' in cur_msg:
+                    continue
+                msg_prefix, msg_suffix = cur_msg.split('=')
+                msg_prefix = msg_prefix.split()
+                if len(msg_prefix) != 4:
+                    continue
+                if int(msg_prefix[0]) != self.uwb_node_id:
+                    continue
+
+                cmd_src, cmd_seq, cmd_type = int(msg_prefix[1]), int(msg_prefix[2]), msg_prefix[3]
+
+                if cmd_src==self.CONTROLLER_ID and cmd_type==self.LORA_RANGING_CMD:
+                    if msg_suffix:
+                        msg_suffix = msg_suffix.split()
+                        rlist = []
+                        msg_suffix = msg_suffix.split()
+                        for n1 in msg_suffix:
+                            rlist.append(int(n1))
+                        logging.debug("starting ranging " + str(self.uwb_node_id) + "-->" + str(rlist))
+                        range_response = self.get_uwb_ranges(nlist=rlist, slot_time_msec=self.slot_time_msec)
+                        logging.debug("debug: range_response: " + str(range_response))
+                        lora_range_reponse = self.LORA_MSG_START_MARK + ' ' + \
+                                             str(self.uwb_node_id) + ' ' + \
+                                             str(cmd_src) + ' ' + \
+                                             str(cmd_seq) + ' ' + \
+                                             str(cmd_type) + ' = ' + \
+                                             range_response + ' ' + \
+                                             self.LORA_MSG_END_MARK
+                        logging.debug("debug: lora_range_response: " + str(lora_range_reponse))
+                        self.lora_node.lora_send(lora_range_reponse)
+                        logging.debug("finished sending data over lora for: " + str(self.uwb_node_id) + "-->" + str(rlist))
+            except Exception as ex:
+                logging.exception(ex)
+                continue
+        return
+
+    #-------------------------generic Methods-------------------------------------------#
+    def run_beacon(self):
+        try:
+            self.thread_list['lora_thread'] = threading.Thread(name='lora',
+                                                               target=self.thread_lora_frame_receiver,
+                                                               daemon=True)
+            self.thread_list['cmd_handler'] = threading.Thread(name='cmd-handler',
+                                                               target=self.thread_handle_controller_commands,
+                                                               daemon=True
+                                                               )
+            self.thread_list['cmd_handler'].start()
+            self.thread_list['lora_thread'].start()
+        except Exception as ex:
+            logging.exception(ex)
+            exit(1)
+
+        while True:
+            time.sleep(1)
+        return
 
 if __name__ == '__main__':
     signal.signal(signal.SIGINT, sigint_handler)

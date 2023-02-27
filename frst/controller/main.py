@@ -8,7 +8,6 @@ import signal
 from sx126x import Lora
 
 def sigint_handler(signal, frame):
-    #print('Exiting program.....')
     sys.exit(0)
 
 class FRSTController(object):
