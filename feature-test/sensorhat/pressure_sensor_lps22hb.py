@@ -75,3 +75,16 @@ class LPS22HB(object):
         u8Buf[2] = self._read_byte(self.LPS_PRESS_OUT_H)
         pressure_val = ((u8Buf[2] << 16) + (u8Buf[1] << 8) + u8Buf[0]) / 4096.0
         return pressure_val
+
+
+     def is_new_temperature_val_available(self):
+        if (self._read_byte(self.LPS_STATUS) & 0x02) == 0x02:
+            return True
+        return False
+
+    def get_temperature_val(self):
+        u8Buf = [0, 0]
+        u8Buf[0] = self._read_byte(self.LPS_TEMP_OUT_L)
+        u8Buf[1] = self._read_byte(self.LPS_TEMP_OUT_H)
+        temperature_val=((u8Buf[1]<<8)+u8Buf[0])/100.0
+        return temperature_val

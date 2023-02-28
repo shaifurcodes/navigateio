@@ -9,8 +9,10 @@ import threading
 import sys
 import signal
 from queue import Queue
+from math import log
 
 from sx126x import Lora
+from pressure_sensor_lps22hb import LPS22HB
 
 def sigint_handler(signal, frame):
     sys.exit(0)
@@ -54,6 +56,19 @@ class FRSTRPI(object):
         self.cur_lora_msg = ''
         self.thread_list = {}
 
+        self.UNSET_SENSOR_VALUE = -1.0
+        self.pressure_reading_interval_sec = 1.0
+        self.pressure_hpa = self.UNSET_SENSOR_VALUE
+        self.is_sensor_available = True
+        try:
+            self.pressure_sensor = LPS22HB()
+        except Exception as ex:
+            logging.exception(ex)
+            self.is_sensor_available = False
+        self.temperature_celsius = self.UNSET_SENSOR_VALUE
+
+        self.altitude_meter = 0.
+
         self.set_uwb_node_id()
         return
 
@@ -78,6 +93,16 @@ class FRSTRPI(object):
                     if 'DEVNAME' in cur_device_attrs.keys():
                         return str(cur_device_attrs['DEVNAME'])
         return ''
+
+    def pressure_to_z(self, pressure_hpa, temperature_celsius):
+        #formula_src: https://sciencing.com/calculate-air-volume-5146908.html
+        temp_F = temperature_celsius*1.8 + 32.
+        try:
+            return ( ( log( pressure_hpa*100./101325. )*287.053 ) * \
+                     (temp_F + 459.67)*5./9. )/(-9.8)
+        except Exception as ex:
+            logging.exception(ex)
+        return 0.0
 
     #----------------------------UWB USB API methods ------------------------------------#
     def find_dw1000_via_usb(self):
@@ -120,12 +145,13 @@ class FRSTRPI(object):
         return ''
 
     def set_uwb_node_id(self):
-        '''
-        :return:
-        '''
-        my_hostname = socket.gethostname()
-        rpi_no = ''.join([char for char in my_hostname[::-1] if char.isdigit()])[::-1]
-        logging.info("My RPI number: "+str(rpi_no))
+        rpi_no = ''
+        try:
+            my_hostname = socket.gethostname()
+            rpi_no = ''.join([char for char in my_hostname[::-1] if char.isdigit()])[::-1]
+            logging.info("My RPI number: "+str(rpi_no))
+        except Exception as ex:
+            logging.exception(ex)
 
         self.usb_cmd_counter = (self.usb_cmd_counter + 1) % 256
         usb_msg = str(self.CMD_SEND_ID)+' '+str(self.usb_cmd_counter)+' '+str("RPI")+str(rpi_no)
@@ -226,6 +252,8 @@ class FRSTRPI(object):
                                              str(cmd_seq) + ' ' + \
                                              str(cmd_type) + ' = ' + \
                                              range_response + ' ' + \
+                                             '; ' + \
+                                             str(self.altitude_meter) + \
                                              self.LORA_MSG_END_MARK
                         logging.debug("debug: lora_range_response: " + str(lora_range_reponse))
                         self.lora_node.lora_send(lora_range_reponse)
@@ -235,18 +263,42 @@ class FRSTRPI(object):
                 continue
         return
 
+    def thread_read_sensor_data(self):
+        while True:
+            time.sleep(self.pressure_reading_interval_sec)
+            try:
+                self.pressure_sensor.set_oneshot_reading_mode()
+                while not self.pressure_sensor.is_new_pressure_val_available() and \
+                      not self.pressure_sensor.is_new_temperature_val_available():
+                    time.sleep(0.1)
+                self.pressure_hpa = round(self.pressure_sensor.get_pressure_val(), 3)
+                self.temperature_celsius = round(self.pressure_sensor.get_temperature_val(), 3 )
+                alt_val = self.pressure_to_z(self.pressure_hpa, self.temperature_celsius)
+                if alt_val != self.UNSET_SENSOR_VALUE:
+                    self.altitude_meter = alt_val
+            except Exception as ex:
+                logging.exception(ex)
+                continue
+        return
+
     #-------------------------generic Methods-------------------------------------------#
     def run_beacon(self):
         try:
-            self.thread_list['lora_thread'] = threading.Thread(name='lora',
+            self.thread_list['lora'] = threading.Thread(name='lora',
                                                                target=self.thread_lora_frame_receiver,
                                                                daemon=True)
-            self.thread_list['cmd_handler'] = threading.Thread(name='cmd-handler',
+            self.thread_list['cmdhndlr'] = threading.Thread(name='cmd-handler',
                                                                target=self.thread_handle_controller_commands,
                                                                daemon=True
                                                                )
-            self.thread_list['cmd_handler'].start()
-            self.thread_list['lora_thread'].start()
+            self.thread_list['sensor'] =  threading.Thread(name='sensor',
+                                                           target=self.thread_read_sensor_data,
+                                                           daemon=True
+                                                            )
+            self.thread_list['cmdhndlr'].start()
+            self.thread_list['lora'].start()
+            if self.is_sensor_available:
+                self.thread_list['sensor'].start()
         except Exception as ex:
             logging.exception(ex)
             exit(1)
