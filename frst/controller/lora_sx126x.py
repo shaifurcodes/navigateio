@@ -1,5 +1,6 @@
+import logging
 import serial
-import time
+
 try:
     import RPi.GPIO as GPIO
 except:
@@ -12,7 +13,7 @@ class Lora:
         if 'ttyAMA0' in serial_port: #TODO: if tty in portname, assume rpi, revisit to make code better
             self.is_rpi = True
         if self.is_rpi:
-            serial_read_timeout_sec = 0.5
+            serial_read_timeout_sec = 0.2
         try:
             self.ser = serial.Serial(port=serial_port,
                                          baudrate= 9600,
@@ -27,8 +28,8 @@ class Lora:
                                          inter_byte_timeout=None,
                                          exclusive=None)
         except Exception as ex:
-            print(ex)
-            exit()
+            logging.exception(ex)
+            exit(1)
         self.ser.reset_input_buffer()
         self.ser.reset_output_buffer()
 
@@ -44,22 +45,15 @@ class Lora:
             GPIO.output(self.M0, GPIO.LOW)
 
     def lora_send(self, data):
-        try:
-            self.ser.reset_output_buffer()
-            lora_data = (str(data)).encode(encoding='utf-8')
-            self.ser.write(lora_data)
-            time.sleep(0.0)
-        except Exception as ex:
-            print(ex)
+        lora_data = (str(data)).encode(encoding='utf-8')
+        self.ser.reset_output_buffer()
+        self.ser.write(lora_data)
         return
 
     def lora_receive(self):
-        recv_msg = ""
-        try:
-            recv_msg = self.ser.read_until(expected='E').decode(encoding='utf-8', errors='ignore')
-        except Exception as ex:
-            print(ex)
-        self.ser.reset_input_buffer()
+        recv_msg = self.ser.read(size=self.ser.in_waiting)
+        #self.ser.reset_input_buffer()
+        recv_msg = recv_msg.decode(encoding='utf-8', errors='ignore')
         return recv_msg
 
     def close_serial_port(self):
