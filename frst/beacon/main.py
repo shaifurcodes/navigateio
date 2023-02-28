@@ -200,7 +200,6 @@ class FRSTRPI(object):
             time.sleep(0) #thread yield
             try:
                 lora_recv_msgs = self.lora_node.lora_receive()
-                logging.debug("new lora msg: "+lora_recv_msgs)
                 if not lora_recv_msgs:
                     continue
                 for cindx, c in enumerate(lora_recv_msgs):
