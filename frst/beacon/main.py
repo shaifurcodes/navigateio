@@ -252,7 +252,7 @@ class FRSTRPI(object):
                                              str(cmd_type) + ' = ' + \
                                              range_response + ' ' + \
                                              '; ' + \
-                                             str(self.altitude_meter) + \
+                                             'z '+str(self.altitude_meter) + \
                                              self.LORA_MSG_END_MARK
                         logging.debug("debug: lora_range_response: " + str(lora_range_reponse))
                         self.lora_node.lora_send(lora_range_reponse)

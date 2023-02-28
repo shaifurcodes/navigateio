@@ -1,28 +1,26 @@
 LoRa msg format:
 Example 1:
 ===========
-"cb 12 0 4 r=2 6 E "
+"S 6 0 134 r = 2 4 E"
 
-cb: controller to beacon
-bc: beacon to controller
-bb: beacon to beacon
+S: start marker
+6: dest node id
+0: src node id
+134: msg sequence #
+r: command type (i.e. range)
+'=': right-hand-side is the query params (range with node 2 and 4)
+E: end marker
 
-12: lora msg sequence number
-
-0: source node (0 for controller 1=< for beacons)
-4: destination node (0 for controller 1=< for beacons)
-
-r: command type ( "r" range, "s" uwb shout, "i" respond immediately etc.)
-
-=:command params or command replies
-
-2 6: range with 2 and 6
-
-E: msg-end marker
-
-Example 2:
+Example 2: (response to the above)
 ===========
-"bc 12 4 0 r=2 912 6 125 E"
+"S 0 6 134 r = 2 920 4 188; z 12.34 E"
 
-
-
+S: start marker
+0: dest node id
+6: src node id
+134: msg sequence # (same in response msg as in query msg)
+r: command type (same in response msg as in query msg)
+'=': right-hand-side is the query response (range values with node 2 and 4 are 920 and 188 cm respectivley)
+'; ': additional info seperator following primary query
+z: altitude as computed from pressure sensor value (i.e. 12.34 meter)
+E: end marker
