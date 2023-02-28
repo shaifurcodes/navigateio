@@ -10,7 +10,6 @@ import sys
 import signal
 from queue import Queue
 
-
 from sx126x import Lora
 
 def sigint_handler(signal, frame):
