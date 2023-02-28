@@ -11,7 +11,7 @@ import signal
 from queue import Queue
 from math import log
 
-from sx126x import Lora
+from lora_sx126x import Lora
 from pressure_sensor_lps22hb import LPS22HB
 
 def sigint_handler(signal, frame):
