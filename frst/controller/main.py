@@ -36,9 +36,9 @@ class FRSTController(object):
         self.controller_id = 0
 
         n = len(self.node_list)
-        self.edm = np.zeros((n, n), dtype=np.float)
+        self.edm = np.zeros((n, n), dtype=float)
         self.MAX_RANG_FRESHNESS_SEC = 30
-        self.ts_edm = np.full((n, n), fill_value=self.MAX_RANG_FRESHNESS_SEC, dtype=np.float)
+        self.ts_edm = np.full((n, n), fill_value=self.MAX_RANG_FRESHNESS_SEC, dtype=float)
 
         self.LORA_MSG_START_MARK = 'S'
         self.LORA_MSG_END_MARK = 'E'
