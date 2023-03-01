@@ -148,22 +148,22 @@ class FRSTController(object):
             logging.debug("!!! not ';' in msg_suffix")
             return
         msg_suffix = msg_suffix.split(';')
-
-        if cmd_type == 'r':
-            logging.debug("processing ranges..")
-            n1_r1_pairs = msg_suffix[0].split(',')
-            for n1_r1 in n1_r1_pairs:
-                n1, r1 = n1_r1.split()
-                n1, r1 = int(n1), float(r1)
-                if r1 == 0: continue
-                n1_indx = self.node_list.index(n1)
-                self.edm[n1_indx, src_indx] = r1 / 100.
-                self.edm[src_indx, n1_indx] = r1 / 100.
-                logging.debug("self.edm[src_indx, n1_indx] = self.edm[n1_indx, src_indx] = "+str(self.edm[n1_indx, src_indx]))
-                self.ts_edm[src_indx, n1_indx] = self.ts_edm[n1_indx, src_indx] = round(time.time() - self.init_ts, 3)
+        if msg_suffix[0] and not msg_suffix[0].isspace():
+            if cmd_type == 'r':
+                logging.debug("processing ranges..")
+                n1_r1_pairs = msg_suffix[0].split(',')
+                for n1_r1 in n1_r1_pairs:
+                    n1, r1 = n1_r1.split()
+                    n1, r1 = int(n1), float(r1)
+                    if r1 == 0: continue
+                    n1_indx = self.node_list.index(n1)
+                    self.edm[n1_indx, src_indx] = r1 / 100.
+                    self.edm[src_indx, n1_indx] = r1 / 100.
+                    logging.debug("self.edm[src_indx, n1_indx] = self.edm[n1_indx, src_indx] = "+str(self.edm[n1_indx, src_indx]))
+                    self.ts_edm[src_indx, n1_indx] = self.ts_edm[n1_indx, src_indx] = round(time.time() - self.init_ts, 3)
         if len(msg_suffix) < 2:
             return
-        if msg_suffix[1]:
+        if msg_suffix[1] and not msg_suffix[1].isspace():
             z_data = msg_suffix[1].split()
             if len(z_data)==2 and 'z' in z_data[0]:
                 self.z[src_indx] = float(z_data[1])
