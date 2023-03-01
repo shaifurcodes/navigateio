@@ -64,7 +64,7 @@ class FRSTController(object):
         with open(self.loc_data_file, 'a') as f:
             cur_ts = round(time.time() - self.init_ts, 3)
             for n1_indx, n1 in enumerate(self.node_list):
-                f_text = str(cur_ts)+', '+str(n1)+', '+str(self.x[n1_indx])+', '+str(self.y[n1_indx])+', '+str(self.z[n1_indx])+'\n'
+                f_text = str(cur_ts)+', '+str(n1)+', '+str(round(self.x[n1_indx],3))+', '+str(round(self.y[n1_indx],3))+', '+str(round(self.z[n1_indx],3))+'\n'
                 f.write(f_text)
         logging.debug("saved data to file....")
         return
