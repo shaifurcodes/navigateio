@@ -214,6 +214,7 @@ if __name__ == '__main__':
     signal.signal(signal.SIGINT, sigint_handler)
     if len(sys.argv) < 5:
         print("Program requires 4 arguements: origin x-axis mobile y-direction for example 'sudo python3 main 2 4 6 +1' ")
+        exit(0)
     try:
         n1 =  int(sys.argv[1])
         n2 = int(sys.argv[2])
