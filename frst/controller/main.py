@@ -106,9 +106,13 @@ class FRSTController(object):
         self.x[0], self.y[0] = 0.,0.
 
         self.y[1] = 0.0
-        if self.edm[0,1] > 0.:
+        if self.edm[0, 1] > 0.:
             self.x[1] = float(self.edm[0, 1])
-        self.localize_node(n1=self.mobile_node, n2_list=self.static_nodes)
+        else:
+            return
+        if self.edm[2, 0]>0. and self.edm[2, 1]>0.:
+            self.localize_node(n1=self.mobile_node, n2_list=self.static_nodes)
+            self.save_location_data()
         return
 
     def process_lora_msg(self, msg):
@@ -167,7 +171,7 @@ class FRSTController(object):
                 lora_recv_msgs = self.lora_node.lora_receive()
                 if not lora_recv_msgs:
                     return
-                logging.debug("lora-msg: " + lora_recv_msgs)
+                #logging.debug("lora-msg: " + lora_recv_msgs)
                 for cindx, c in enumerate(lora_recv_msgs):
                     if c == self.last_msg_marker or c == self.LORA_MSG_START_MARK:
                         self.cur_lora_msg = ''
@@ -198,7 +202,7 @@ class FRSTController(object):
             try:
                 src, nlist = self.select_nodes_to_range()
                 self.send_range_cmd(src=src, nlist=nlist)
-                self.lora_expected_resp_src = src 
+                self.lora_expected_resp_src = src
                 finishing_ts = time.time() + self.LORA_RESP_WAIT_TIME_SEC
                 self.lora_recv_msg_srcs = []
                 while time.time() <= finishing_ts:
