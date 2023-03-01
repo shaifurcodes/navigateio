@@ -147,7 +147,7 @@ class FRSTController(object):
     def send_range_cmd(self, src, nlist):
         nlist_str = ''
         for n in nlist:
-            nlist_str = nlist_str + str(n)
+            nlist_str = nlist_str+' '+ str(n)
         lora_msg = 'S '+str(src)+' '+str(self.controller_id)+' '+str(self.lora_msg_seq_no)+' r = '+\
                                                                                         nlist_str+' E'
         self.lora_msg_seq_no += 1
