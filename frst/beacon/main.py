@@ -247,8 +247,8 @@ class FRSTRPI(object):
                         range_response = self.get_uwb_ranges(nlist=rlist, slot_time_msec=self.slot_time_msec)
                         logging.debug("debug: range_response: " + str(range_response))
                         lora_range_reponse = self.LORA_MSG_START_MARK + ' ' + \
-                                             str(self.uwb_node_id) + ' ' + \
                                              str(cmd_src) + ' ' + \
+                                             str(self.uwb_node_id) + ' ' + \
                                              str(cmd_seq) + ' ' + \
                                              str(cmd_type) + ' = ' + \
                                              range_response + ' ' + \
