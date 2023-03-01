@@ -23,7 +23,7 @@ class FRSTController(object):
             logging.exception(ex)
             exit(1)
         self.y_dir = y_dir
-        self.node_list = [n1, n2, n3,]
+        self.node_list = [n1, n2, n3]
         self.mobile_node = n3
         self.static_nodes = [n for n in self.node_list if n!=self.mobile_node]
         self.last_ranging_static_node_indx = 0
