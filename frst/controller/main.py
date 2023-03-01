@@ -112,10 +112,14 @@ class FRSTController(object):
         if self.edm[0, 1] > 0.:
             self.x[1] = float(self.edm[0, 1])
         else:
+            logging.debug("!!!self.edm[0,1]: "+str(self.edm[0, 1]))
             return
         if self.edm[2, 0]>0. and self.edm[2, 1]>0.:
             self.localize_node(n1=self.mobile_node, n2_list=self.static_nodes)
             self.save_location_data()
+        else:
+            logging.debug("!!!self.edm[2,0]: " + str(self.edm[2, 0]))
+            logging.debug("!!!self.edm[2,1]: " + str(self.edm[2, 1))
         return
 
     def process_lora_msg(self, msg):
