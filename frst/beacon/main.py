@@ -241,7 +241,6 @@ class FRSTRPI(object):
                     if msg_suffix:
                         msg_suffix = msg_suffix.split()
                         rlist = []
-                        msg_suffix = msg_suffix.split()
                         for n1 in msg_suffix:
                             rlist.append(int(n1))
                         logging.debug("starting ranging " + str(self.uwb_node_id) + "-->" + str(rlist))
