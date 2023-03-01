@@ -56,6 +56,11 @@ class Lora:
         recv_msg = recv_msg.decode(encoding='utf-8', errors='ignore')
         return recv_msg
 
+    def is_lora_msg_available(self):
+        if self.ser.in_waiting >0:
+            return  True
+        return False
+
     def close_serial_port(self):
         self.ser.close()
         return

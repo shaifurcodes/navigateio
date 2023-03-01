@@ -13,7 +13,7 @@ def sigint_handler(signal, frame):
     sys.exit(0)
 
 class FRSTController(object):
-    def __init__(self):
+    def __init__(self, n1, n2, n3, y_dir):
         self.init_logging()
 
         self.LORA_PORT = '/dev/ttyUSB0'
@@ -22,12 +22,14 @@ class FRSTController(object):
         except Exception as ex:
             logging.exception(ex)
             exit(1)
-
-        self.node_list = [2, 3, 4, 6]
-        self.mobile_node = 6
+        self.y_dir = y_dir
+        self.node_list = [n1, n2, n3,]
+        self.mobile_node = n3
         self.static_nodes = [n for n in self.node_list if n!=self.mobile_node]
         self.last_ranging_static_node_indx = 0
-        self.x, self.y, self.z = 0.,0.,0.
+        self.x = [-1. for _ in self.node_list]
+        self.y = [-1. for _ in self.node_list]
+        self.z = [-1. for _ in self.node_list]
 
         self.LORA_RESP_WAIT_TIME_SEC = 2.5
         self.lora_msg_seq_no = 0
@@ -41,6 +43,8 @@ class FRSTController(object):
         self.LORA_MSG_START_MARK = 'S'
         self.LORA_MSG_END_MARK = 'E'
         self.lora_incoming_msg_q = Queue()
+
+        self.loc_data_file = './location_data.txt'
         self.init_ts = time.time()
         return
 
@@ -54,8 +58,55 @@ class FRSTController(object):
             datefmt='%H:%M:%S')  # '%Y-%m-%d %H:%M:%S'
         return
 
-    def localize(self):
+    def save_location_data(self):
+        with open(self.loc_data_file, 'a') as f:
+            cur_ts = round(time.time() - self.init_ts, 3)
+            for n1_indx, n1 in enumerate(self.node_list):
+                f_text = str(cur_ts)+', '+str(n1)+', '+str(self.x[n1_indx])+', '+str(self.y[n1_indx])+', '+str(self.z[n1_indx])+'\n'
+                f.write(f_text)
+        return
 
+    def localize_node(self, n1, n2_list):
+        try:
+            if len(n2_list) <= 1:
+                return
+            n1_indx = self.node_list.index(n1)
+
+            mulitlat_solver = lx.Project(mode='2D', solver='LSE_GC')
+            n1_loc_sovler, _ = mulitlat_solver.add_target()
+
+            for n2 in n2_list:
+                n2_indx = self.node_list.index(n2)
+                n2_x, n2_y = self.x[n2_indx], self.y[n2_indx]
+                mulitlat_solver.add_anchor(str(n2), (n2_x, n2_y))
+
+            for n2 in n2_list:
+                n2_indx = self.node_list.index(n2)
+                d = self.edm[n1_indx, n2_indx]
+                if d<=0.:
+                    return
+                n1_loc_sovler.add_measure(str(n2), d)
+
+            mulitlat_solver.solve()
+            if n1_loc_sovler.loc is None:
+                return
+            n1_x, n1_y = n1_loc_sovler.loc.x, n1_loc_sovler.loc.y
+            if self.y_dir <0:
+                n1_y = -abs(n1_y)
+            else:
+                n1_y = abs(n1_y)
+            self.x[n1_indx], self.y[n1_indx] = n1_x, n1_y
+        except Exception as e:
+            logging.exception("loc-solver error: "+str(e))
+        return
+
+    def localize(self):
+        self.x[0], self.y[0] = 0.,0.
+
+        self.y[1] = 0.0
+        if self.edm[0,1] > 0.:
+            self.x[1] = float(self.edm[0, 1])
+        self.localize_node(n1=self.mobile_node, n2_list=self.static_nodes)
         return
 
     def process_lora_msg(self, msg):
@@ -68,13 +119,16 @@ class FRSTController(object):
         if msg_prefix[0] != self.controller_id:
             return
         src, seq_no, cmd_type = int(msg_prefix[1]), int(msg_prefix[2]), msg_prefix[3]
+        src_indx = self.node_list.index(src)
+
         if self.lora_msg_seq_no > seq_no+2:
             return
+
         if not ';' in msg_suffix:
             return
         msg_suffix = msg_suffix.split(';')
+
         if cmd_type == 'r':
-            src_indx = self.node_list.index(src)
             n1_r1_pairs = msg_suffix.split(',')
             for n1_r1 in n1_r1_pairs:
                 n1, r1 = n1_r1.split()
@@ -83,6 +137,11 @@ class FRSTController(object):
                 n1_indx = self.node_list.index(n1)
                 self.edm[src_indx, n1_indx] = self.edm[n1_indx, src_indx] = r1/100.
                 self.ts_edm[src_indx, n1_indx] = self.ts_edm[n1_indx, src_indx] = round(time.time() - self.init_ts, 3)
+
+        if msg_suffix[1]:
+            z_data = msg_suffix[1].split()
+            if len(z_data)==2 and 'z' in z_data[0]:
+                self.z[src_indx] = float(z_data[1])
         return
 
     def send_range_cmd(self, src, nlist):
@@ -153,5 +212,17 @@ class FRSTController(object):
 
 if __name__ == '__main__':
     signal.signal(signal.SIGINT, sigint_handler)
-    frst_controller = FRSTController()
-    frst_controller.run_controller()
+    if len(sys.argv) < 5:
+        print("Program requires 4 arguements: origin x-axis mobile y-direction for example 'sudo python3 main 2 4 6 +1' ")
+    try:
+        n1 =  int(sys.argv[1])
+        n2 = int(sys.argv[2])
+        n3 = int(sys.argv[3])
+        y_dir = 1
+        if  int(sys.argv[4]) <0:
+            y_dir = -1
+        frst_controller = FRSTController(n1, n2, n3, y_dir)
+        frst_controller.run_controller()
+    except Exception as ex:
+        print(ex)
+        exit(1)
