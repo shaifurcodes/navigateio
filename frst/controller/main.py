@@ -123,13 +123,17 @@ class FRSTController(object):
         return
 
     def process_lora_msg(self, msg):
+        logging.debug("processing lora msg: "+str(msg))
         if not '=' in msg:
+            logging.debug("!!! not '=' in msg ")
             return
         msg_prefix, msg_suffix = msg.split('=')
-        if len(msg_prefix) != 4:
-            return
         msg_prefix = msg_prefix.split()
+        if len(msg_prefix) != 4:
+            logging.debug("!!! len(msg_prefix) != 4")
+            return
         if msg_prefix[0] != self.controller_id:
+            logging.debug("!!! msg_prefix[0] != self.controller_id")
             return
         src, seq_no, cmd_type = int(msg_prefix[1]), int(msg_prefix[2]), msg_prefix[3]
         logging.debug("src, seq_no, cmd_type: "+str(src)+" "+str(seq_no)+" "+str(cmd_type))
@@ -137,11 +141,11 @@ class FRSTController(object):
         src_indx = self.node_list.index(src)
 
         if self.lora_msg_seq_no > seq_no+2:
-            logging.debug("!!!self.lora_msg_seq_no > seq_no+2:")
+            logging.debug("!!! self.lora_msg_seq_no > seq_no+2:")
             return
 
         if not ';' in msg_suffix:
-            logging.debug("not ';' in msg_suffix")
+            logging.debug("!!! not ';' in msg_suffix")
             return
         msg_suffix = msg_suffix.split(';')
 
