@@ -151,7 +151,7 @@ class FRSTController(object):
 
         if cmd_type == 'r':
             logging.debug("processing ranges..")
-            n1_r1_pairs = msg_suffix.split[0](',')
+            n1_r1_pairs = msg_suffix[0].split(',')
             for n1_r1 in n1_r1_pairs:
                 n1, r1 = n1_r1.split()
                 n1, r1 = int(n1), float(r1)
