@@ -119,7 +119,7 @@ class FRSTController(object):
             self.save_location_data()
         else:
             logging.debug("!!!self.edm[2,0]: " + str(self.edm[2, 0]))
-            logging.debug("!!!self.edm[2,1]: " + str(self.edm[2, 1))
+            logging.debug("!!!self.edm[2,1]: " + str(self.edm[2, 1]))
         return
 
     def process_lora_msg(self, msg):
