@@ -47,6 +47,8 @@ class FRSTController(object):
         self.lora_expected_resp_src = -1
         self.lora_recv_msg_srcs = []
         self.loc_data_file = './location_data.txt'
+        with open(self.loc_data_file, 'w') as f:
+            pass
         self.init_ts = time.time()
         return
 
