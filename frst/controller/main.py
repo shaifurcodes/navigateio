@@ -44,7 +44,8 @@ class FRSTController(object):
         self.LORA_MSG_START_MARK = 'S'
         self.LORA_MSG_END_MARK = 'E'
         self.lora_incoming_msg_q = Queue()
-
+        self.lora_expected_resp_src = -1
+        self.lora_recv_msg_srcs = []
         self.loc_data_file = './location_data.txt'
         self.init_ts = time.time()
         return
@@ -120,6 +121,7 @@ class FRSTController(object):
         if msg_prefix[0] != self.controller_id:
             return
         src, seq_no, cmd_type = int(msg_prefix[1]), int(msg_prefix[2]), msg_prefix[3]
+        self.lora_recv_msg_srcs.append(src)
         src_indx = self.node_list.index(src)
 
         if self.lora_msg_seq_no > seq_no+2:
@@ -161,29 +163,23 @@ class FRSTController(object):
 
     def enq_lora_msgs(self):
         try:
-            finishing_ts = time.time() + self.LORA_RESP_WAIT_TIME_SEC
-            while True:
-                if time.time() > finishing_ts: break
-                if self.lora_node.is_lora_msg_available(): break
-                time.sleep(0.01)
-                continue
-            if not self.lora_node.is_lora_msg_available():
-                return
-            lora_recv_msgs = self.lora_node.lora_receive()
-            if not lora_recv_msgs:
-                return
-            for cindx, c in enumerate(lora_recv_msgs):
-                if c==self.last_msg_marker or c==self.LORA_MSG_START_MARK:
-                    self.cur_lora_msg = ''
-                    self.last_msg_marker = c
-                elif c==self.LORA_MSG_END_MARK:
-                    if self.cur_lora_msg:
-                        logging.debug("cur_lora_msg: "+self.cur_lora_msg)
-                        self.lora_incoming_msg_q.put(str(self.cur_lora_msg))
-                    self.cur_lora_msg = ''
-                    self.last_msg_marker = c
-                elif self.last_msg_marker==self.LORA_MSG_START_MARK:
-                    self.cur_lora_msg = self.cur_lora_msg + c
+            if self.lora_node.is_lora_msg_available():
+                lora_recv_msgs = self.lora_node.lora_receive()
+                if not lora_recv_msgs:
+                    return
+                logging.debug("lora-msg: " + lora_recv_msgs)
+                for cindx, c in enumerate(lora_recv_msgs):
+                    if c == self.last_msg_marker or c == self.LORA_MSG_START_MARK:
+                        self.cur_lora_msg = ''
+                        self.last_msg_marker = c
+                    elif c == self.LORA_MSG_END_MARK:
+                        if self.cur_lora_msg:
+                            logging.debug("cur_lora_msg: " + self.cur_lora_msg)
+                            self.lora_incoming_msg_q.put(str(self.cur_lora_msg))
+                        self.cur_lora_msg = ''
+                        self.last_msg_marker = c
+                    elif self.last_msg_marker == self.LORA_MSG_START_MARK:
+                        self.cur_lora_msg = self.cur_lora_msg + c
         except Exception as ex:
             logging.exception(ex)
         return
@@ -202,9 +198,15 @@ class FRSTController(object):
             try:
                 src, nlist = self.select_nodes_to_range()
                 self.send_range_cmd(src=src, nlist=nlist)
-                self.enq_lora_msgs()
-                while not self.lora_incoming_msg_q.empty():
-                    self.process_lora_msg(msg = self.lora_incoming_msg_q.get())
+                self.lora_expected_resp_src = src 
+                finishing_ts = time.time() + self.LORA_RESP_WAIT_TIME_SEC
+                self.lora_recv_msg_srcs = []
+                while time.time() <= finishing_ts:
+                    self.enq_lora_msgs()
+                    while not self.lora_incoming_msg_q.empty():
+                        self.process_lora_msg(msg = self.lora_incoming_msg_q.get())
+                    if self.lora_expected_resp_src in self.lora_recv_msg_srcs:
+                        break
                 self.localize()
             except Exception as ex:
                 logging.exception(ex)
