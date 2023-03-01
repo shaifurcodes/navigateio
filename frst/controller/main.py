@@ -151,7 +151,7 @@ class FRSTController(object):
 
         if cmd_type == 'r':
             logging.debug("processing ranges..")
-            n1_r1_pairs = msg_suffix.split(',')
+            n1_r1_pairs = msg_suffix.split[0](',')
             for n1_r1 in n1_r1_pairs:
                 n1, r1 = n1_r1.split()
                 n1, r1 = int(n1), float(r1)
@@ -161,7 +161,8 @@ class FRSTController(object):
                 self.edm[src_indx, n1_indx] = r1 / 100.
                 logging.debug("self.edm[src_indx, n1_indx] = self.edm[n1_indx, src_indx] = "+str(self.edm[n1_indx, src_indx]))
                 self.ts_edm[src_indx, n1_indx] = self.ts_edm[n1_indx, src_indx] = round(time.time() - self.init_ts, 3)
-
+        if len(msg_suffix) < 2:
+            return
         if msg_suffix[1]:
             z_data = msg_suffix[1].split()
             if len(z_data)==2 and 'z' in z_data[0]:
