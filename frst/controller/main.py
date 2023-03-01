@@ -132,7 +132,7 @@ class FRSTController(object):
         if len(msg_prefix) != 4:
             logging.debug("!!! len(msg_prefix) != 4")
             return
-        if msg_prefix[0] != self.controller_id:
+        if int(msg_prefix[0]) != self.controller_id:
             logging.debug("!!! msg_prefix[0] != self.controller_id")
             return
         src, seq_no, cmd_type = int(msg_prefix[1]), int(msg_prefix[2]), msg_prefix[3]
