@@ -53,7 +53,7 @@ class FRSTRPI(object):
         self.LORA_MSG_START_MARK = 'S'
         self.LORA_MSG_END_MARK = 'E'
         self.LORA_RANGING_CMD = 'r'
-
+        self.last_msg_marker = 'E'
         self.lora_incoming_msg_q = Queue()
         self.cur_lora_msg = ''
         self.thread_list = {}
