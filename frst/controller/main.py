@@ -66,6 +66,7 @@ class FRSTController(object):
             for n1_indx, n1 in enumerate(self.node_list):
                 f_text = str(cur_ts)+', '+str(n1)+', '+str(self.x[n1_indx])+', '+str(self.y[n1_indx])+', '+str(self.z[n1_indx])+'\n'
                 f.write(f_text)
+        logging.debug("saved data to file....")
         return
 
     def localize_node(self, n1, n2_list):
@@ -98,11 +99,13 @@ class FRSTController(object):
             else:
                 n1_y = abs(n1_y)
             self.x[n1_indx], self.y[n1_indx] = n1_x, n1_y
+            logging.debug("solved for loc: "+str(n1_x)+", "+str(n1_y))
         except Exception as e:
             logging.exception("loc-solver error: "+str(e))
         return
 
     def localize(self):
+        logging.debug("attempting localization...")
         self.x[0], self.y[0] = 0.,0.
 
         self.y[1] = 0.0
