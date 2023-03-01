@@ -34,6 +34,7 @@ class FRSTController(object):
         self.LORA_RESP_WAIT_TIME_SEC = 2.5
         self.lora_msg_seq_no = 0
         self.controller_id = 0
+        self.last_msg_marker = 'E'
 
         n = len(self.node_list)
         self.edm = np.zeros((n, n), dtype=float)
