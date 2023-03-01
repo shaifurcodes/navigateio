@@ -149,7 +149,9 @@ class FRSTController(object):
                 n1, r1 = int(n1), float(r1)
                 if r1 == 0: continue
                 n1_indx = self.node_list.index(n1)
-                self.edm[src_indx, n1_indx] = self.edm[n1_indx, src_indx] = r1/100.
+                self.edm[n1_indx, src_indx] = r1 / 100.
+                self.edm[src_indx, n1_indx] = r1 / 100.
+                logging.debug("self.edm[src_indx, n1_indx] = self.edm[n1_indx, src_indx] = "+str(self.edm[n1_indx, src_indx]))
                 self.ts_edm[src_indx, n1_indx] = self.ts_edm[n1_indx, src_indx] = round(time.time() - self.init_ts, 3)
 
         if msg_suffix[1]:
