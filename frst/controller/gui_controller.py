@@ -1,10 +1,11 @@
 from  controller import FRSTController
-from PyQt5.QtWidgets import QWidget, QGridLayout, QLabel, QVBoxLayout
+from PyQt5.QtWidgets import QWidget, QGridLayout, QLabel, QVBoxLayout, QApplication
 from PyQt5.QtGui import  QFont
 from PyQt5 import QtCore
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 import time
+import sys
 
 class GUI_Controller(QWidget):
     def __init__(self, *args, **kwargs):
@@ -105,3 +106,9 @@ class GUI_Controller(QWidget):
             self.canvas.draw_idle()
             time.sleep(0.5)
         return
+
+if __name__ == '__main__':
+    if __name__ == '__main__':
+        app = QApplication(sys.argv)
+        trackio = GUI_Controller()
+        app.exec_()
