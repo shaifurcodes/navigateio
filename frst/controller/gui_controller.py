@@ -10,7 +10,7 @@ import logging
 logging.getLogger('matplotlib').setLevel(logging.ERROR)
 pil_logger = logging.getLogger('PIL')
 pil_logger.setLevel(logging.INFO)
-
+import threading
 
 class GUI_Controller(QWidget):
     def __init__(self, *args, **kwargs):
@@ -38,6 +38,9 @@ class GUI_Controller(QWidget):
 
         self.show()
         self.setupGUI()
+
+        t = threading.Thread(name='gui-main',target=self.run_controller, daemon=True)
+        t.start()
         return
 
     def setupGUI(self):
@@ -117,5 +120,4 @@ if __name__ == '__main__':
     if __name__ == '__main__':
         app = QApplication(sys.argv)
         navigateio = GUI_Controller()
-        navigateio.run_controller()
         app.exec_()
