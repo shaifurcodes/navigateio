@@ -1,4 +1,4 @@
-#!/usr/bin/python3.8
+#!/usr/bin/python3
 
 import logging
 import time
@@ -61,6 +61,9 @@ class FRSTController(object):
             format='%(asctime)s.%(msecs)03d, %(threadName)-10s: %(message)s',
             datefmt='%H:%M:%S')  # '%Y-%m-%d %H:%M:%S'
         return
+
+    def get_z_of_mobile_node(self):
+        return self.z[self.node_list.index( self.mobile_node )]
 
     def save_location_data(self):
         with open(self.loc_data_file, 'a') as f:
@@ -217,24 +220,28 @@ class FRSTController(object):
             return src, nlist
         return self.mobile_node, self.static_nodes
 
+
+    def run_controller_single_iteration(self):
+        try:
+            src, nlist = self.select_nodes_to_range()
+            self.send_range_cmd(src=src, nlist=nlist)
+            self.lora_expected_resp_src = src
+            finishing_ts = time.time() + self.LORA_RESP_WAIT_TIME_SEC
+            self.lora_recv_msg_srcs = []
+            while time.time() <= finishing_ts:
+                self.enq_lora_msgs()
+                while not self.lora_incoming_msg_q.empty():
+                    self.process_lora_msg(msg=self.lora_incoming_msg_q.get())
+                if self.lora_expected_resp_src in self.lora_recv_msg_srcs:
+                    break
+            self.localize()
+        except Exception as ex:
+            logging.exception(ex)
+            pass
+
     def run_controller(self):
         while True:
-            try:
-                src, nlist = self.select_nodes_to_range()
-                self.send_range_cmd(src=src, nlist=nlist)
-                self.lora_expected_resp_src = src
-                finishing_ts = time.time() + self.LORA_RESP_WAIT_TIME_SEC
-                self.lora_recv_msg_srcs = []
-                while time.time() <= finishing_ts:
-                    self.enq_lora_msgs()
-                    while not self.lora_incoming_msg_q.empty():
-                        self.process_lora_msg(msg = self.lora_incoming_msg_q.get())
-                    if self.lora_expected_resp_src in self.lora_recv_msg_srcs:
-                        break
-                self.localize()
-            except Exception as ex:
-                logging.exception(ex)
-                continue
+            self.run_controller_single_iteration()
         return
 
 if __name__ == '__main__':
