@@ -1,3 +1,5 @@
+#!/usr/bin/python3
+
 from  controller import FRSTController
 from PyQt5.QtWidgets import QWidget, QGridLayout, QLabel, QVBoxLayout, QApplication
 from PyQt5.QtGui import  QFont
@@ -6,7 +8,9 @@ import matplotlib.pyplot as plt
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 import time
 import sys
+import configparser
 import logging
+
 logging.getLogger('matplotlib').setLevel(logging.ERROR)
 pil_logger = logging.getLogger('PIL')
 pil_logger.setLevel(logging.INFO)
@@ -15,11 +19,13 @@ import threading
 class GUI_Controller(QWidget):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        # READ from file
-        self.gui_origin_node = 2
-        self.gui_x_axis_node = 4
-        self.gui_mobile_node = 6
-        self.gui_y_dir = 1
+
+        self.config = configparser.ConfigParser()
+        self.config.read('./controller.ini')
+
+        self.gui_origin_node = int(self.config['BEACON']['origin'])
+        self.gui_x_axis_node = int(self.config['BEACON']['xaxis'])
+        self.gui_mobile_node = int(self.config['BEACON']['mobile'])
 
         self.gui_node_list = [self.gui_origin_node,
                               self.gui_x_axis_node,
@@ -29,7 +35,7 @@ class GUI_Controller(QWidget):
                               self.gui_origin_node,
                               self.gui_x_axis_node,
                               self.gui_mobile_node,
-                              self.gui_y_dir)
+                              1)
         self.canvas = None
         self.fig = None
         self.axes = None
@@ -95,8 +101,8 @@ class GUI_Controller(QWidget):
                           bbox=dict(boxstyle='square', fc=backgroundcolor, ec='none') )
 
         #mobile_node_z  = self.frst_controller.get_z_of_mobile_node()
-        self.mobile_node_z_label = cur_axis.text(-50, 50,  #TODO: bring within frame
-                                               str(self.mobile_node_z_label), fontsize=20, fontweight='bold', color='red',
+        self.mobile_node_z_label = cur_axis.text(-50, 100,  #TODO: bring within frame
+                                               "z:"+str(self.mobile_node_z_label), fontsize=20, fontweight='bold', color='red',
                                                bbox=dict(boxstyle='square', fc="cyan", ec='none'))
 
         self.canvas.draw()
