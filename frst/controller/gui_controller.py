@@ -8,6 +8,9 @@ import time
 import sys
 import logging
 logging.getLogger('matplotlib').setLevel(logging.ERROR)
+pil_logger = logging.getLogger('PIL')
+pil_logger.setLevel(logging.INFO)
+
 
 class GUI_Controller(QWidget):
     def __init__(self, *args, **kwargs):
@@ -99,6 +102,7 @@ class GUI_Controller(QWidget):
     def run_controller(self):
         while True:
             self.frst_controller.run_controller_single_iteration()
+            logging.debug("ran controller iteration")
             for n1_indx, n1 in enumerate(self.frst_controller.node_list):
                 x, y = self.frst_controller.x[n1_indx], self.frst_controller.y[n1_indx]
                 self.gui_node_list[n1].set_position((x, y))
