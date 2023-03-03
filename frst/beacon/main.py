@@ -67,6 +67,8 @@ class FRSTRPI(object):
         except Exception as ex:
             logging.exception(ex)
             self.is_sensor_available = False
+        if self.is_sensor_available:
+            logging.info("Pressure-sensor LPS22HB detected via I2C(1) bus")
         self.temperature_celsius = self.UNSET_SENSOR_VALUE
 
         self.altitude_meter = 0.
