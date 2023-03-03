@@ -6,6 +6,8 @@ import matplotlib.pyplot as plt
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 import time
 import sys
+import logging
+logging.getLogger('matplotlib').setLevel(logging.ERROR)
 
 class GUI_Controller(QWidget):
     def __init__(self, *args, **kwargs):
