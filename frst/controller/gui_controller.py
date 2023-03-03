@@ -62,12 +62,12 @@ class GUI_Controller(QWidget):
 
     def _initialize_floormap_gui(self):
         #---------------floor map panel-----------#
-        self.fig, self.axes = plt.subplots(1, 1)
+        self.fig, self.axes = plt.subplots()
         self.fig.tight_layout()
         self.canvas = FigureCanvas(self.fig)
         # self.canvas.setFocusPolicy(QtCore.Qt.ClickFocus)
         # self.canvas.setFocus()
-        cur_axis = self.axes[0]
+        cur_axis = self.axes
         cur_axis.cla()
         cur_axis.set_xlim(-50, 50)
         cur_axis.set_ylim(0, 100)
