@@ -116,5 +116,6 @@ class GUI_Controller(QWidget):
 if __name__ == '__main__':
     if __name__ == '__main__':
         app = QApplication(sys.argv)
-        trackio = GUI_Controller()
+        navigateio = GUI_Controller()
+        navigateio.run_controller()
         app.exec_()
