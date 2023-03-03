@@ -78,7 +78,8 @@ class FRSTRPI(object):
 
     #---------------------------utilitiy methods-------------------------------------#
     def init_logging(self):
-        log_file_name = '/home/pi/software/navigateio/frst/beacon/beacon.log'
+        #log_file_name = '/home/pi/software/navigateio/frst/beacon/beacon.log'
+        log_file_name = '/home/pi/navigateio-service.log'
         logging.basicConfig(
             filename= log_file_name,
             filemode='w',
