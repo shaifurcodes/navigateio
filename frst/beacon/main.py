@@ -102,8 +102,8 @@ class FRSTRPI(object):
         #formula_src: https://sciencing.com/calculate-air-volume-5146908.html
         temp_F = temperature_celsius*1.8 + 32.
         try:
-            return ( ( log( pressure_hpa*100./101325. )*287.053 ) * \
-                     (temp_F + 459.67)*5./9. )/(-9.8)
+            return round(( ( log( pressure_hpa*100./101325. )*287.053 ) * \
+                     (temp_F + 459.67)*5./9. )/(-9.8),3)
         except Exception as ex:
             logging.exception(ex)
         return 0.0
