@@ -412,24 +412,29 @@ if __name__ == '__main__':
         print("\nSense HAT Test Program ...\n")
         icm20948=ICM20948()
 
-        while True:
-          icm20948.icm20948_Gyro_Accel_Read()
-          icm20948.icm20948MagRead()
-          icm20948.icm20948CalAvgValue()
-          time.sleep(0.1)
-          icm20948.imuAHRSupdate(icm20948.MotionVal[0] * 0.0175, icm20948.MotionVal[1] * 0.0175,icm20948.MotionVal[2] * 0.0175,
-                      icm20948.MotionVal[3],icm20948.MotionVal[4],icm20948.MotionVal[5],
-                      icm20948.MotionVal[6], icm20948.MotionVal[7], icm20948.MotionVal[8])
+        with open('./magneto_test_data.txt', 'w') as f:
+                init_ts = time.time()
+                while True:
+                  icm20948.icm20948_Gyro_Accel_Read()
+                  icm20948.icm20948MagRead()
+                  icm20948.icm20948CalAvgValue()
+                  time.sleep(0.1)
+                  icm20948.imuAHRSupdate(icm20948.MotionVal[0] * 0.0175, icm20948.MotionVal[1] * 0.0175,icm20948.MotionVal[2] * 0.0175,
+                              icm20948.MotionVal[3],icm20948.MotionVal[4],icm20948.MotionVal[5],
+                              icm20948.MotionVal[6], icm20948.MotionVal[7], icm20948.MotionVal[8])
 
-          pitch = math.asin(-2 * icm20948.q1 * icm20948.q3 + 2 * icm20948.q0 * icm20948.q2) * 57.3
-          roll = math.atan2(2 * icm20948.q2 * icm20948.q3 + 2 * icm20948.q0 * icm20948.q1, -2 * icm20948.q1 * icm20948.q1 - 2 * icm20948.q2 * icm20948.q2 + 1) * 57.3
-          yaw = math.atan2(-2 * icm20948.q1 * icm20948.q2 - 2 * icm20948.q0 * icm20948.q3, 2 * icm20948.q2 * icm20948.q2 + 2 * icm20948.q3 * icm20948.q3 - 1) * 57.3
+                  pitch = math.asin(-2 * icm20948.q1 * icm20948.q3 + 2 * icm20948.q0 * icm20948.q2) * 57.3
+                  roll = math.atan2(2 * icm20948.q2 * icm20948.q3 + 2 * icm20948.q0 * icm20948.q1, -2 * icm20948.q1 * icm20948.q1 - 2 * icm20948.q2 * icm20948.q2 + 1) * 57.3
+                  yaw = math.atan2(-2 * icm20948.q1 * icm20948.q2 - 2 * icm20948.q0 * icm20948.q3, 2 * icm20948.q2 * icm20948.q2 + 2 * icm20948.q3 * icm20948.q3 - 1) * 57.3
 
-          print("\r\n /-------------------------------------------------------------/ \r\n")
-          print('\r\n Roll = %.2f , Pitch = %.2f , Yaw = %.2f\r\n'%(icm20948.roll, icm20948.pitch, icm20948.yaw))
-          print('\r\nAcceleration:  X = %d , Y = %d , Z = %d\r\n'%(icm20948.Accel[0], icm20948.Accel[1], icm20948.Accel[2]))
-          print('\r\nGyroscope:     X = %d , Y = %d , Z = %d\r\n'%(icm20948.Gyro[0], icm20948.Gyro[1], icm20948.Gyro[2]))
-          print('\r\nMagnetic:      X = %d , Y = %d , Z = %d'%((icm20948.Mag[0]), icm20948.Mag[1], icm20948.Mag[2]))
+                  print("\r\n /-------------------------------------------------------------/ \r\n")
+                  # print('\r\n Roll = %.2f , Pitch = %.2f , Yaw = %.2f\r\n'%(icm20948.roll, icm20948.pitch, icm20948.yaw))
+                  # print('\r\nAcceleration:  X = %d , Y = %d , Z = %d\r\n'%(icm20948.Accel[0], icm20948.Accel[1], icm20948.Accel[2]))
+                  # print('\r\nGyroscope:     X = %d , Y = %d , Z = %d\r\n'%(icm20948.Gyro[0], icm20948.Gyro[1], icm20948.Gyro[2]))
+                  etime = round(time.time() - init_ts, 3)
+                  ftext = str(etime)+", "+str((icm20948.Mag[0]))+", "+str((icm20948.Mag[1]))+", "+str((icm20948.Mag[2]))
+                  f.write(ftext+'\n')
+                  print(ftext)
 
 
 

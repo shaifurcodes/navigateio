@@ -1,3 +1,4 @@
+from math import log
 try:
     import smbus
 except Exception:
@@ -87,3 +88,36 @@ class LPS22HB(object):
         u8Buf[1] = self._read_byte(self.LPS_TEMP_OUT_H)
         temperature_val=((u8Buf[1]<<8)+u8Buf[0])/100.0
         return temperature_val
+
+
+def pressure_to_z(pressure_hpa, temperature_celsius):
+    #formula_src: https://sciencing.com/calculate-air-volume-5146908.html
+    temp_F = temperature_celsius*1.8 + 32.
+    try:
+        return round(( ( log( pressure_hpa*100./101325. )*287.053 ) * \
+                 (temp_F + 459.67)*5./9. )/(-9.8),3)
+    except Exception as ex:
+        pass
+    return 0.0
+
+if __name__ == '__main__':
+    import time
+    pressure_sensor = LPS22HB()
+    init_ts = time.time()
+    with open('./pressure_test_data.txt') as f:
+        while True:
+            try:
+                pressure_sensor.set_oneshot_reading_mode()
+                while not pressure_sensor.is_new_pressure_val_available() and \
+                        not pressure_sensor.is_new_temperature_val_available():
+                    time.sleep(0.1)
+                pressure_hpa = round(pressure_sensor.get_pressure_val(), 3)
+                temperature_celsius = round(pressure_sensor.get_temperature_val(), 3)
+                alt_val = pressure_to_z(pressure_hpa, temperature_celsius)
+                etime = round( time.time() - init_ts, 3)
+                ftext = str(etime)+", "+str(pressure_hpa)+", "+str(alt_val)+", "+str(temperature_celsius)
+                f.write(ftext+"\n")
+                print(ftext)
+            except Exception as ex:
+                print(ex)
+                continue
