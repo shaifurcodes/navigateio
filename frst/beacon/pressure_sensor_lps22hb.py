@@ -104,7 +104,7 @@ if __name__ == '__main__':
     import time
     pressure_sensor = LPS22HB()
     init_ts = time.time()
-    with open('./pressure_test_data.txt') as f:
+    with open('./pressure_test_data.txt', "w") as f:
         while True:
             try:
                 pressure_sensor.set_oneshot_reading_mode()
