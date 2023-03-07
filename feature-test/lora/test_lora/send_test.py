@@ -14,7 +14,7 @@ def send_test():
 
     lora_node = Lora(serial_port=str(sys.argv[1]))
     my_count = 0
-    my_string = " Hello"
+    my_string = " Hello E"
     print("*********** send-test ********************** (press CTRL+C to terminate program)")
     while True:
         try:

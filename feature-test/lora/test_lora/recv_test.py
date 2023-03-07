@@ -18,7 +18,7 @@ def recv_test():
     print("=========recv-test====================(press CTRL+C to terminate program)")
     while True:
         try:
-            time.sleep(0.5)
+            time.sleep(0.1)
             lora_msg = lora_node.lora_receive()
             msgs = []
             filtered_msg = ''.join(letter for letter in lora_msg if letter.isalnum() or letter in [',', ' ','=']) #TODO: recheck if characters are dropped
