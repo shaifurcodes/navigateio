@@ -53,7 +53,7 @@ class FRSTController(object):
             pass
         self.init_ts = time.time()
 
-        if not os.isdir("./"+self.exp_name):
+        if not os.path.isdir("./"+self.exp_name):
             os.mkdir("./"+self.exp_name)
 
         self.frange = './'+self.exp_name+'/ranges_log.txt'
