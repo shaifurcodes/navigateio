@@ -8,12 +8,13 @@ import numpy as np
 from queue import  Queue
 from lora_sx126x import Lora
 import localization as lx
+import os
 
 def sigint_handler(signal, frame):
     sys.exit(0)
 
 class FRSTController(object):
-    def __init__(self, n1, n2, n3, y_dir):
+    def __init__(self, n1, n2, n3, y_dir, exp_name):
         self.init_logging()
 
         self.LORA_PORT = '/dev/ttyUSB0'
@@ -30,8 +31,9 @@ class FRSTController(object):
         self.x = [-1. for _ in self.node_list]
         self.y = [-1. for _ in self.node_list]
         self.z = [-1. for _ in self.node_list]
+        self.exp_name = str(exp_name)
 
-        self.LORA_RESP_WAIT_TIME_SEC = 2.5
+        self.LORA_RESP_WAIT_TIME_SEC = 1. #2.5
         self.lora_msg_seq_no = 0
         self.controller_id = 0
         self.last_msg_marker = 'E'
@@ -50,6 +52,12 @@ class FRSTController(object):
         with open(self.loc_data_file, 'w') as f:
             pass
         self.init_ts = time.time()
+
+        if not os.isdir("./"+self.exp_name):
+            os.mkdir("./"+self.exp_name)
+
+        self.frange = './'+self.exp_name+'/ranges_log.txt'
+        self.fz = './'+self.exp_name+'/z_log.txt'
         return
 
     def init_logging(self):
@@ -122,9 +130,9 @@ class FRSTController(object):
         if self.edm[2, 0]>0. and self.edm[2, 1]>0.:
             self.localize_node(n1=self.mobile_node, n2_list=self.static_nodes)
             self.save_location_data()
-        else:
-            logging.debug("!!!self.edm[2,0]: " + str(self.edm[2, 0]))
-            logging.debug("!!!self.edm[2,1]: " + str(self.edm[2, 1]))
+        # else:
+        #     logging.debug("!!!self.edm[2,0]: " + str(self.edm[2, 0]))
+        #     logging.debug("!!!self.edm[2,1]: " + str(self.edm[2, 1]))
         return
 
     def process_lora_msg(self, msg):
@@ -164,14 +172,21 @@ class FRSTController(object):
                     n1_indx = self.node_list.index(n1)
                     self.edm[n1_indx, src_indx] = r1 / 100.
                     self.edm[src_indx, n1_indx] = r1 / 100.
-                    logging.debug("self.edm[src_indx, n1_indx] = self.edm[n1_indx, src_indx] = "+str(self.edm[n1_indx, src_indx]))
-                    self.ts_edm[src_indx, n1_indx] = self.ts_edm[n1_indx, src_indx] = round(time.time() - self.init_ts, 3)
+                    etime = round(time.time() - self.init_ts, 3)
+                    with open(self.frange, "a") as f:
+                        f.write(str(etime)+", "+str(src)+", "+str(n1)+', '+str(r1)+"\n")
+                    #logging.debug("self.edm[src_indx, n1_indx] = self.edm[n1_indx, src_indx] = "+str(self.edm[n1_indx, src_indx]))
+                    self.ts_edm[src_indx, n1_indx] = self.ts_edm[n1_indx, src_indx] = etime
         if len(msg_suffix) < 2:
             return
         if msg_suffix[1] and not msg_suffix[1].isspace():
             z_data = msg_suffix[1].split()
             if len(z_data)==2 and 'z' in z_data[0]:
-                self.z[src_indx] = float(z_data[1])
+                z_val = float(z_data[1])
+                self.z[src_indx] = z_val
+                etime = round(time.time() - self.init_ts, 3)
+                with open(self.fz, "a") as f:
+                    f.write(str(etime)+", "+str(src)+", "+str(z_val)+"\n")
         return
 
     def send_range_cmd(self, src, nlist):
@@ -234,7 +249,7 @@ class FRSTController(object):
                     self.process_lora_msg(msg=self.lora_incoming_msg_q.get())
                 if self.lora_expected_resp_src in self.lora_recv_msg_srcs:
                     break
-            self.localize()
+            #self.localize()
         except Exception as ex:
             logging.exception(ex)
             pass
@@ -246,8 +261,8 @@ class FRSTController(object):
 
 if __name__ == '__main__':
     signal.signal(signal.SIGINT, sigint_handler)
-    if len(sys.argv) < 5:
-        print("Program requires 4 arguements: origin x-axis mobile y-direction for example 'sudo python3 main 2 4 6 +1' ")
+    if len(sys.argv) < 6:
+        print("Program requires 5 arguements: origin x-axis mobile y-direction for example 'sudo python3 main 2 4 6 +1 temp_exp' ")
         exit(0)
     try:
         n1 =  int(sys.argv[1])
@@ -256,7 +271,7 @@ if __name__ == '__main__':
         y_dir = 1
         if  int(sys.argv[4]) <0:
             y_dir = -1
-        frst_controller = FRSTController(n1, n2, n3, y_dir)
+        frst_controller = FRSTController(n1, n2, n3, y_dir, str(sys.argv[5]))
         frst_controller.run_controller()
     except Exception as ex:
         print(ex)

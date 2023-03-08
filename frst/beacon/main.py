@@ -42,7 +42,7 @@ class FRSTRPI(object):
         self.DW1000_VENDOR_ID = '0483'
         self.DW1000_PRODUCT_ID = '5740'
 
-        self.LORA_PORT_RPI = '/dev/ttyAMA0'
+        self.LORA_PORT_RPI = '/dev/ttyUSB0'
 
         self.lora_node = Lora(serial_port=self.LORA_PORT_RPI)
         if not self.find_dw1000_via_usb():
