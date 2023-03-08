@@ -1,8 +1,10 @@
 #!/usr/bin/python3
 
-import logging
+
 import  pyudev
 import serial
+
+import logging
 import socket
 import time
 import threading
@@ -83,7 +85,7 @@ class FRSTRPI(object):
         logging.basicConfig(
             filename= log_file_name,
             filemode='w',
-            level=logging.DEBUG,
+            level=logging.ERROR,
             format='%(asctime)s.%(msecs)03d, %(threadName)-10s: %(message)s',
             datefmt='%H:%M:%S')  # '%Y-%m-%d %H:%M:%S'
         return

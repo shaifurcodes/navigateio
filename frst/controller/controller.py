@@ -49,8 +49,8 @@ class FRSTController(object):
         self.lora_expected_resp_src = -1
         self.lora_recv_msg_srcs = []
         self.loc_data_file = './location_data.txt'
-        with open(self.loc_data_file, 'w') as f:
-            pass
+        # with open(self.loc_data_file, 'w') as f:
+        #     pass
         self.init_ts = time.time()
 
         if not os.path.isdir("./"+self.exp_name):
@@ -190,7 +190,7 @@ class FRSTController(object):
                 ftext = str(etime)+", "+str(src)+", "+str(z_val)
                 with open(self.fz, "a") as f:
                     f.write(ftext+"\n")
-                print(ftext)
+                print("===============>"+ftext)
         return
 
     def send_range_cmd(self, src, nlist):
