@@ -173,8 +173,10 @@ class FRSTController(object):
                     self.edm[n1_indx, src_indx] = r1 / 100.
                     self.edm[src_indx, n1_indx] = r1 / 100.
                     etime = round(time.time() - self.init_ts, 3)
+                    ftext = str(etime)+", "+str(src)+", "+str(n1)+', '+str(r1)
                     with open(self.frange, "a") as f:
-                        f.write(str(etime)+", "+str(src)+", "+str(n1)+', '+str(r1)+"\n")
+                        f.write(ftext+"\n")
+                    print(ftext)
                     #logging.debug("self.edm[src_indx, n1_indx] = self.edm[n1_indx, src_indx] = "+str(self.edm[n1_indx, src_indx]))
                     self.ts_edm[src_indx, n1_indx] = self.ts_edm[n1_indx, src_indx] = etime
         if len(msg_suffix) < 2:
@@ -185,8 +187,10 @@ class FRSTController(object):
                 z_val = float(z_data[1])
                 self.z[src_indx] = z_val
                 etime = round(time.time() - self.init_ts, 3)
+                ftext = str(etime)+", "+str(src)+", "+str(z_val)
                 with open(self.fz, "a") as f:
-                    f.write(str(etime)+", "+str(src)+", "+str(z_val)+"\n")
+                    f.write(ftext+"\n")
+                print(ftext)
         return
 
     def send_range_cmd(self, src, nlist):
