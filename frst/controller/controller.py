@@ -9,13 +9,23 @@ from queue import  Queue
 from lora_sx126x import Lora
 import localization as lx
 import os
+import configparser
 
 def sigint_handler(signal, frame):
     sys.exit(0)
 
 class FRSTController(object):
-    def __init__(self, n1, n2, n3, y_dir, exp_name):
+    def __init__(self, exp_name):
         self.init_logging()
+
+        self.origin_node = None
+        self.xaxis_node = None
+        self.mobile_node = None
+        self.fixed_nodes = []
+        self.node_list = []
+
+        self.load_config()
+        self.static_nodes = [n for n in self.node_list if n != self.mobile_node]
 
         self.LORA_PORT = '/dev/ttyUSB0'
         try:
@@ -23,14 +33,15 @@ class FRSTController(object):
         except Exception as ex:
             logging.exception(ex)
             exit(1)
-        self.y_dir = y_dir
-        self.node_list = [n1, n2, n3]
-        self.mobile_node = n3
-        self.static_nodes = [n for n in self.node_list if n!=self.mobile_node]
+
+        self.y_dir = 1 #TODO: make it flexible
+
         self.last_ranging_static_node_indx = 0
+
         self.x = [-1. for _ in self.node_list]
         self.y = [-1. for _ in self.node_list]
         self.z = [-1. for _ in self.node_list]
+
         self.exp_name = str(exp_name)
 
         self.LORA_RESP_WAIT_TIME_SEC = 1. #2.5
@@ -48,9 +59,11 @@ class FRSTController(object):
         self.lora_incoming_msg_q = Queue()
         self.lora_expected_resp_src = -1
         self.lora_recv_msg_srcs = []
-        self.loc_data_file = './location_data.txt'
+
+        #self.loc_data_file = './location_data.txt'
         # with open(self.loc_data_file, 'w') as f:
         #     pass
+
         self.init_ts = time.time()
 
         if not os.path.isdir("./"+self.exp_name):
@@ -58,6 +71,24 @@ class FRSTController(object):
 
         self.frange = './'+self.exp_name+'/ranges_log.txt'
         self.fz = './'+self.exp_name+'/z_log.txt'
+        return
+
+    def load_config(self):
+        config = configparser.ConfigParser()
+        config.read('./controller.ini')
+
+        self.origin_node = int(config['BEACON']['origin'])
+        self.xaxis_node = int(config['BEACON']['xaxis'])
+        self.mobile_node = int(config['BEACON']['mobile'])
+
+        self.node_list = [self.origin_node, self.xaxis_node, self.mobile_node]
+
+        self.fixed_nodes = []
+        if 'fixed' in config['BEACON'].keys():
+            self.fixed_nodes = \
+                [int(i) for i in str(config['BEACON']['fixed']).split(',') if not int(i) in self.node_list]
+            if self.fixed_nodes:
+                self.node_list = self.node_list+self.fixed_nodes
         return
 
     def init_logging(self):
@@ -70,70 +101,70 @@ class FRSTController(object):
             datefmt='%H:%M:%S')  # '%Y-%m-%d %H:%M:%S'
         return
 
-    def get_z_of_mobile_node(self):
-        return self.z[self.node_list.index( self.mobile_node )]
-
-    def save_location_data(self):
-        with open(self.loc_data_file, 'a') as f:
-            cur_ts = round(time.time() - self.init_ts, 3)
-            for n1_indx, n1 in enumerate(self.node_list):
-                f_text = str(cur_ts)+', '+str(n1)+', '+str(round(self.x[n1_indx],3))+', '+str(round(self.y[n1_indx],3))+', '+str(round(self.z[n1_indx],3))+'\n'
-                f.write(f_text)
-        logging.debug("saved data to file....")
-        return
-
-    def localize_node(self, n1, n2_list):
-        try:
-            if len(n2_list) <= 1:
-                return
-            n1_indx = self.node_list.index(n1)
-
-            mulitlat_solver = lx.Project(mode='2D', solver='LSE_GC')
-            n1_loc_sovler, _ = mulitlat_solver.add_target()
-
-            for n2 in n2_list:
-                n2_indx = self.node_list.index(n2)
-                n2_x, n2_y = self.x[n2_indx], self.y[n2_indx]
-                mulitlat_solver.add_anchor(str(n2), (n2_x, n2_y))
-
-            for n2 in n2_list:
-                n2_indx = self.node_list.index(n2)
-                d = self.edm[n1_indx, n2_indx]
-                if d<=0.:
-                    return
-                n1_loc_sovler.add_measure(str(n2), d)
-
-            mulitlat_solver.solve()
-            if n1_loc_sovler.loc is None:
-                return
-            n1_x, n1_y = n1_loc_sovler.loc.x, n1_loc_sovler.loc.y
-            if self.y_dir <0:
-                n1_y = -abs(n1_y)
-            else:
-                n1_y = abs(n1_y)
-            self.x[n1_indx], self.y[n1_indx] = n1_x, n1_y
-            logging.debug("solved for loc: "+str(n1_x)+", "+str(n1_y))
-        except Exception as e:
-            logging.exception("loc-solver error: "+str(e))
-        return
-
-    def localize(self):
-        logging.debug("attempting localization...")
-        self.x[0], self.y[0] = 0.,0.
-
-        self.y[1] = 0.0
-        if self.edm[0, 1] > 0.:
-            self.x[1] = float(self.edm[0, 1])
-        else:
-            logging.debug("!!!self.edm[0,1]: "+str(self.edm[0, 1]))
-            return
-        if self.edm[2, 0]>0. and self.edm[2, 1]>0.:
-            self.localize_node(n1=self.mobile_node, n2_list=self.static_nodes)
-            self.save_location_data()
-        # else:
-        #     logging.debug("!!!self.edm[2,0]: " + str(self.edm[2, 0]))
-        #     logging.debug("!!!self.edm[2,1]: " + str(self.edm[2, 1]))
-        return
+    # def get_z_of_mobile_node(self):
+    #     return self.z[self.node_list.index( self.mobile_node )]
+    #
+    # def save_location_data(self):
+    #     with open(self.loc_data_file, 'a') as f:
+    #         cur_ts = round(time.time() - self.init_ts, 3)
+    #         for n1_indx, n1 in enumerate(self.node_list):
+    #             f_text = str(cur_ts)+', '+str(n1)+', '+str(round(self.x[n1_indx],3))+', '+str(round(self.y[n1_indx],3))+', '+str(round(self.z[n1_indx],3))+'\n'
+    #             f.write(f_text)
+    #     logging.debug("saved data to file....")
+    #     return
+    #
+    # def localize_node(self, n1, n2_list):
+    #     try:
+    #         if len(n2_list) <= 1:
+    #             return
+    #         n1_indx = self.node_list.index(n1)
+    #
+    #         mulitlat_solver = lx.Project(mode='2D', solver='LSE_GC')
+    #         n1_loc_sovler, _ = mulitlat_solver.add_target()
+    #
+    #         for n2 in n2_list:
+    #             n2_indx = self.node_list.index(n2)
+    #             n2_x, n2_y = self.x[n2_indx], self.y[n2_indx]
+    #             mulitlat_solver.add_anchor(str(n2), (n2_x, n2_y))
+    #
+    #         for n2 in n2_list:
+    #             n2_indx = self.node_list.index(n2)
+    #             d = self.edm[n1_indx, n2_indx]
+    #             if d<=0.:
+    #                 return
+    #             n1_loc_sovler.add_measure(str(n2), d)
+    #
+    #         mulitlat_solver.solve()
+    #         if n1_loc_sovler.loc is None:
+    #             return
+    #         n1_x, n1_y = n1_loc_sovler.loc.x, n1_loc_sovler.loc.y
+    #         if self.y_dir <0:
+    #             n1_y = -abs(n1_y)
+    #         else:
+    #             n1_y = abs(n1_y)
+    #         self.x[n1_indx], self.y[n1_indx] = n1_x, n1_y
+    #         logging.debug("solved for loc: "+str(n1_x)+", "+str(n1_y))
+    #     except Exception as e:
+    #         logging.exception("loc-solver error: "+str(e))
+    #     return
+    #
+    # def localize(self):
+    #     logging.debug("attempting localization...")
+    #     self.x[0], self.y[0] = 0.,0.
+    #
+    #     self.y[1] = 0.0
+    #     if self.edm[0, 1] > 0.:
+    #         self.x[1] = float(self.edm[0, 1])
+    #     else:
+    #         logging.debug("!!!self.edm[0,1]: "+str(self.edm[0, 1]))
+    #         return
+    #     if self.edm[2, 0]>0. and self.edm[2, 1]>0.:
+    #         self.localize_node(n1=self.mobile_node, n2_list=self.static_nodes)
+    #         self.save_location_data()
+    #     # else:
+    #     #     logging.debug("!!!self.edm[2,0]: " + str(self.edm[2, 0]))
+    #     #     logging.debug("!!!self.edm[2,1]: " + str(self.edm[2, 1]))
+    #     return
 
     def process_lora_msg(self, msg):
         logging.debug("processing lora msg: "+str(msg))
@@ -239,7 +270,6 @@ class FRSTController(object):
             return src, nlist
         return self.mobile_node, self.static_nodes
 
-
     def run_controller_single_iteration(self):
         try:
             src, nlist = self.select_nodes_to_range()
@@ -265,18 +295,9 @@ class FRSTController(object):
 
 if __name__ == '__main__':
     signal.signal(signal.SIGINT, sigint_handler)
-    if len(sys.argv) < 6:
-        print("Program requires 5 arguements: origin x-axis mobile y-direction for example 'sudo python3 main 2 4 6 +1 temp_exp' ")
+    if len(sys.argv) < 2:
+        print("Program requires 1 arguement, USAGE: sudo python3 exp_name")
         exit(0)
-    try:
-        n1 =  int(sys.argv[1])
-        n2 = int(sys.argv[2])
-        n3 = int(sys.argv[3])
-        y_dir = 1
-        if  int(sys.argv[4]) <0:
-            y_dir = -1
-        frst_controller = FRSTController(n1, n2, n3, y_dir, str(sys.argv[5]))
-        frst_controller.run_controller()
-    except Exception as ex:
-        print(ex)
-        exit(1)
+    frst_controller = FRSTController(str(sys.argv[1]))
+    frst_controller.run_controller()
+
